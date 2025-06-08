@@ -40,10 +40,11 @@ function getWildCardLinkText(){
 // }
 
 async function loadTalks() { 
-//   const sheet = {
-//     sheetId: ''
-//     sheetName:
-//   }
+  const sheet = {
+    sheetId: process.env.GOOGLE_SHEET_ID,
+    sheetName: 'Sheet1'
+  }
+  console.log(sheet);
   const sheetUrl = "https://sheet.zohopublic.com/sheet/publishedsheet/73d3dc1f9a21c5cf3e0a8ba775dba2cc80e6231ee446707cce85ed4ac7143b57?type=grid&download=csv";
   // const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQYRJXxT0zM0gFYudSoOwEZToMcXRNTzLIhqis7KrMvtCEZJu2RYO1QfzdS8Y462_Uw2U6jjC9aqrvq/pub?gid=0&single=true&output=csv&sheet=Sheet1"
   const lines = [];
