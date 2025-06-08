@@ -17,9 +17,20 @@ function getWildCardLinkText(){
 }
 
 async function fetchData(sheet) {
+  try {
     const res = await fetch(`https://getsheet.josh-bullough12.workers.dev?spreadsheet=${sheet.spreadsheet}&sheet=${sheet.sheetName}`);
+    if (!res.ok) {
+      throw new Error(`Network response was not ok: ${res.status} ${res.statusText}`);
+    }
     const json = await res.json();
+    if (!json || !json.values) {
+      throw new Error('Invalid data format received from API');
+    }
     return json;
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    return { values: [] };
+  }
 }
 
 function ParseData(data, hasHeaders = true) {
@@ -33,6 +44,7 @@ function ParseData(data, hasHeaders = true) {
 }
 
 async function loadTalks() { 
+  
   const sheet = {
     spreadsheet: 'TalkFinder',
     sheetName: 'Sheet1'
