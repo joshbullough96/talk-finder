@@ -42,6 +42,8 @@ async function loadTalks() {
 
   const [headers, rows] = ParseData(data);
 
+  let lines = [];
+
   rows.forEach(row => {
     let obj = {};
     const [join, title, speaker, url, youtube, byuspeech, totd] = row;
@@ -179,11 +181,12 @@ function searchTalk() {
 
 function showPlaySavedTalk() {
   const savedTalk = localStorage.getItem('savedTalk');
-  if (savedTalk != null) {
+  if (!savedTalk) {
+    // no saved talks yet.
+    document.getElementById('savedTalks').style.display = 'none';
+  } else {
     document.getElementById('savedTalks').style.display = 'block';
     activeTalk = JSON.parse(savedTalk);
-  } else {
-    document.getElementById('savedTalks').style.display = 'none';
   }
 }
 
@@ -582,6 +585,18 @@ loadTalks().then(() => {
 
 
 form.addEventListener('submit', (e) => {
-  e.preventDefault();
-  alert(`Name: ${username.value}\nEmail: ${email.value}\nMessage: ${message.value}`);
-})
+    e.preventDefault();
+    if (!username.value || !email.value || !message.value) {
+        alert('Please fill in all fields');
+        return;
+    }
+    if (!isValidEmail(email.value)) {
+        alert('Please enter a valid email');
+        return;
+    }
+    alert(`Name: ${username.value}\nEmail: ${email.value}\nMessage: ${message.value}`);
+});
+
+function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
