@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uplifting Talk Finder</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <link rel="stylesheet" type="text/css" href="autocomplete.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="wrapper">
+        
+        <header>
+            <h1><a href="index.html">LDS Talk Finder</a></h1>
+        </header>
+
+        <main>
+            <section>
+                <div id="instructional">
+                    <h2>Find your favorite talks in a new and easy way</h2>
+                    <p>On this page you will find links to some of my favorite talks from The Church of Jesus Christ of Latter-Day Saints.</p>
+                    <p>I hope you find this tool useful when trying to hear the word of the Lord from His Prophets.</p>
+                </div>
+            </section>
+
+            <section>
+                <div id="contents">
+                    <div id="searchdiv">
+                        <label for="myInput">Search a talk</label>
+                        <form autocomplete="off">
+                            <div class="autocomplete">
+                                <input id="myInput" type="text" name="listOfTalks" placeholder="Talk Name">
+                            </div>
+                            <button class="btn" onclick="searchTalk(); return false">Search</button>
+                        </form>
+                    </div>
+
+                    <div id="actions">
+                        <button class="btn" onclick="loadRandomTalk(); return false">Random Talk</button>
+                        <button class="btn talkoftheday" onclick="loadTalkOfTheDay(); return false">Talk Of The Day</button>
+                        <button class="btn" id="savedTalks" onclick="loadSavedTalk(); return false">Saved Talk</button>
+                    </div>
+
+                    <div id="loadingScreen">
+                        <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_zjycbtqy.json" background="#F4F4F4" speed=".5" style="width: 100%;" loop autoplay></lottie-player>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <div id="talkcard">
+                    <h3 id="Title"></h3>
+                    <label id="Speaker"></label>
+                    <div id="card">
+                        <div id="icons">
+                            <h3>Listen On</h3>
+                            <a class="psuedobutton" target="_blank" id="YoutubeLink" href="">
+                                <img alt="YouTube Thumbnail" src="../yt_logo_rgb_light.png">
+                            </a>
+                            <a class="psuedobutton" target="_blank" id="Url" href="">
+                                <img id="cws" alt="Church Website Thumbnail" src="../browser.png"> Gospel Library
+                            </a>
+                            <button id="saveBtn" class="realbutton" onclick="saveTalk()">Save This For Later</button>
+                            <button id="alreadyListened" class="realbutton" onclick="alreadyListened()">Already Listened</button>
+                        </div>
+                        <iframe id="TalkIframe" src=""></iframe>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <div id="emailsection">
+                    <h3>Don't have a talk you're looking for? Send in your suggestions</h3>
+                    <form action="https://formspree.io/f/xrgvlnvw" method="POST">
+                        <label for="name">Your Name:</label>
+                        <input type="text" id="name" name="Persons_Name" placeholder="Your Name">
+                        <label for="link">Link to the talk:</label>
+                        <input type="text" id="suggestion" name="Suggested_Talk" placeholder="ex: www.https://www.churchofjesuschrist.org/...">
+                        <button id="send">Send</button>
+                    </form>
+                </div>
+            </section>
+
+            <section>
+                <div id="progress-section">
+                    <h3>Calculate Your Book Of Mormon Progress for the year</h3>
+                    <label for="pageOn">What page are you on?</label>
+                    <input type="number" id="pageOn" name="Page_On" placeholder="Page Number">
+                    <input id="calcBtn" type="submit" name="calcBtb" value="Get Progress" onclick="calculateBookOfMormonProgress()">
+                    <div id="loadingScreen2" class="hidden">
+                        <lottie-player src="https://lottie.host/631a1049-2426-4d75-a20e-f823e52148d3/ZsFfICbZN3.json" background="#F4F4F4" speed=".5" style="width: 100%;" loop autoplay></lottie-player>
+                    </div>
+                    <div id="calculatedResponseDiv" class="CalculationResponse hidden">
+                        <p id="pagesLeft"></p>
+                        <p id="percentageComplete"></p>
+                        <span>You are on track to finish by </span><span id="finishByDate">the end of the year</span><span> if you read about: </span><span id="pagesPerDay"></span><span> pages per day.</span>
+                        <div class="slider">
+                            <label for="slider1">Move the slider to see how soon you can finish</label>
+                            <input id="slider1" type="range" min=".5" max="15" value="1" step="0.5" oninput="fillFinishByDate(); pagesPerDay.innerText = this.value">
+                        </div> 
+                    </div>
+                </div>
+            </section>
+        </main>
+            
+            <section>
+                <div class="centered">
+                    <p>Disclaimer: This is not an official website of the Church of Jesus Christ of Latter-Day Saints. This website is not funded or endorsed by the Church of Jesus Christ of Latter-Day Saints.</p>
+                    <br>
+                </div>
+            <section>
+        </div>
+
+    </div>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="script.js"></script>
+    <script src="sendEmail.js"></script>
+</body>
+</html>

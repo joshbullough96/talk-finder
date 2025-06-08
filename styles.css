@@ -1,0 +1,409 @@
+/* General Styles */
+* {
+    font-family: 'Roboto', sans-serif;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.6;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+/* Wrapper */
+#wrapper {
+    width: 90%;
+    margin: 0 auto;
+}
+
+section {
+    margin-bottom: 65px;
+}
+
+/* Header Styles */
+header {
+    /* background-image: url("temple.jpg"); */
+    background-repeat: no-repeat;
+    background-size: 100%;
+    background-position: center;
+    margin-bottom: 20px;
+    padding: 40px 20px;
+    background-color: rgba(0, 48, 87, 0.8);
+    color: white;
+    text-align: center;
+    border-radius: 8px;
+}
+
+header h1 a {
+    color: white;
+    text-decoration: none;
+    transition: color 0.3s ease;
+    font-size: 2em;
+}
+
+header h1 a:hover {
+    color: #003057;
+}
+
+/* Main Content Styles */
+main {
+    min-height: 650px;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin: 20px auto;
+    max-width: 1200px;
+    border-radius: 8px;
+}
+
+#instructional {
+    margin: 30px 0 40px;
+    text-align: center;
+}
+
+#instructional h2 {
+    color: #2B4C6F;
+}
+
+#instructional p {
+    margin: 10px 0;
+}
+
+#contents {
+    margin: 0 auto;
+    width: 100%;
+}
+
+#searchdiv {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.autocomplete {
+    width: 70%;
+}
+
+#searchdiv input {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+}
+
+#searchdiv button {
+    height: 38px;
+    padding: 10px 20px;
+    background-color: #003057;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.3s ease;
+}
+
+#searchdiv button:hover {
+    background-color: #002040;
+    transform: scale(1.02);
+}
+
+#searchdiv label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+#searchdiv form {
+    display: flex;
+    gap: 10px;
+    width: 50%;
+    justify-content: end;
+    align-items: center;
+}
+
+#myInput {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+#actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.btn {
+    font-size: 14px;
+    flex: 1;
+    padding: 15px;
+    background-color: #003057;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.btn:hover {
+    background-color: #002040;
+    transform: scale(1.02);
+}
+
+#loadingScreen {
+    display: none;
+    text-align: center;
+    margin: 20px 0;
+}
+
+#talkcard {
+    display: none;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+#talkcard h3 {
+    margin-bottom: 10px;
+    font-size: 24px;
+    color: #003057;
+}
+
+#talkcard label {
+    display: block;
+    margin-bottom: 20px;
+    font-size: 18px;
+    color: #333;
+}
+
+#card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#icons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+#icons h3 {
+    flex-basis: 100%;
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 20px;
+    color: #003057;
+}
+
+#icons a.psuedobutton {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    background-color: #efefef;
+    color: #002040;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background 0.3s ease, transform 0.3s ease;
+}
+
+#icons a.psuedobutton:hover {
+    background-color: #efefef;
+    transform: scale(1.02);
+}
+
+#icons a.psuedobutton img {
+    margin-right: 8px;
+    height: 20px;
+}
+
+.realbutton {
+    height: 40px;
+    font-size: inherit;
+    padding: 10px 20px;
+    background-color: #efefef;
+    color: #002040;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.realbutton:hover {
+    background-color: #e0e0e0;
+    transform: scale(1.02);
+}
+
+iframe#TalkIframe {
+    width: 100%;
+    height: 590px;
+    border: none;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#emailsection, #progress-section {
+    margin: 20px 0;
+}
+
+#emailsection h3, #progress-section h3 {
+    margin-bottom: 10px;
+}
+
+#emailsection label, #progress-section label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+#emailsection input, #progress-section input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+#send, #calcBtn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 5px;
+    border: none;
+    background: #003057;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.3s ease;
+}
+
+#send:hover, #calcBtn:hover {
+    background: #002040;
+    transform: scale(1.02);
+}
+
+#send:disabled {
+    background-color: #e2e2e2;
+    color: #ffffff;
+    cursor: not-allowed;
+}
+
+.hidden {
+    display: none;
+}
+
+.centered {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.mt {
+    margin-top: 8px;
+}
+
+/* Responsive Styles
+@media (max-width: 1200px) {
+
+
+    .btn {
+        width: 100%;
+        line-height: 2em;
+
+
+    #contents {
+        width: 100%;
+    }
+
+    .psuedobutton, .realbutton {
+        width: 100%;
+        margin: 10px auto; 
+    }
+
+    main {
+        padding-bottom: 60px;
+    } 
+} */
+
+@media (max-width: 800px) {
+
+    input[type=text] {
+        width: 100% !important;
+        margin: 10px 0;
+        font-size: 14pt;
+    }
+
+    input[type=submit] {
+        width: 100%;
+        font-size: 14pt;
+    }
+
+    header {
+        margin: 10px auto;
+        background-size: 100%;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    #icons {
+        display: grid;
+    }
+
+   #Title{
+        text-align: center;
+        font-size: 1.6em;
+    } 
+    
+    #talkcard label {
+        text-align: center;
+        font-size: 1.2em;
+    }
+    
+}
+
+@media (max-width: 600px) {
+
+    #wrapper {
+        width: 95%;
+    }
+
+    .btn {
+        width: 100%;
+        line-height: 2em;
+    }
+        
+    #searchdiv {
+        display: block;
+    }
+
+    #searchdiv form {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    #searchdiv button {
+        height: 41px;
+        line-height: 2em;
+        width: 30%;
+    }
+}
+
+@media (max-width: 425px) {
+    #wrapper {
+        width: 95%;
+    }
+}
