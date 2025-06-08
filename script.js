@@ -16,68 +16,49 @@ function getWildCardLinkText(){
   return text
 }
 
-// async function loadTalks() { 
-//   const file = await fetch('talks.txt');
-//   const text = await file.text();
-//   const lines = text.split('\n');
+async function fetchData(sheet) {
+    const res = await fetch(`https://getsheet.josh-bullough12.workers.dev?spreadsheet=${sheet.spreadsheet}&sheet=${sheet.sheetName}`);
+    const json = await res.json();
+    return json;
+}
 
-//   for (let line of lines) {
-//     let arr = line.split('|,|');
-//     let obj = {};
-//     obj['title'] = arr[0];
-//     obj['speaker'] = arr[1];
-//     obj['url'] = arr[2];
-//     obj['youtube'] = arr[3];
-//     obj['byuspeech'] = arr[4];
-//     obj['totd'] = arr[5].replace('\r','');
+function ParseData(data, hasHeaders = true) {
 
-//     talkTitles.push(arr[0]);
-//     talksArr.push(obj)
-//     talkObject[obj['title'].toLowerCase()] = obj;
+    const headers = hasHeaders ? data.values[0] : null;
 
-//   }
-//   return talkTitles
-// }
+    const rows = hasHeaders ? data.values.slice(1) : data.values;
+
+    return [headers, rows];
+
+}
 
 async function loadTalks() { 
   const sheet = {
-    sheetId: process.env.GOOGLE_SHEET_ID,
+    spreadsheet: 'TalkFinder',
     sheetName: 'Sheet1'
   }
-  console.log(sheet);
-  const sheetUrl = "https://sheet.zohopublic.com/sheet/publishedsheet/73d3dc1f9a21c5cf3e0a8ba775dba2cc80e6231ee446707cce85ed4ac7143b57?type=grid&download=csv";
-  // const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQYRJXxT0zM0gFYudSoOwEZToMcXRNTzLIhqis7KrMvtCEZJu2RYO1QfzdS8Y462_Uw2U6jjC9aqrvq/pub?gid=0&single=true&output=csv&sheet=Sheet1"
-  const lines = [];
-  const request = {
-      method: 'GET',
-      headers: {
-          'Content-Type': 'text/csv',
-          'Accept': 'text/csv',
-          'Access-Control-Allow-Origin': '*'  // This header needs to be set by the server, not the client
-      }
-  }
 
-  // fetch(sheetUrl, request)
-  //   .then(response => response)
-  //   .then(csv => {
-  //     console.log(csv)
-  //     const rows = csv.split('\n').map(row => row.split(','));
-  //     rows.forEach(row => {
-  //       let obj = {};
-  //       const [title, speaker, url, youtube, byuspeech, totd] = row;
-  //       lines.push(row);
-  //       obj['title'] = title;
-  //       obj['speaker'] = speaker;
-  //       obj['url'] = url;
-  //       obj['youtube'] = youtube;
-  //       obj['byuspeech'] = byuspeech;
-  //       obj['totd'] = totd;
-  //       talkTitles.push(title);
-  //       talksArr.push(obj)
-  //       talkObject[obj['title'].toLowerCase()] = obj;
-  //     });
-  //   });
+  const data = await fetchData(sheet);
+
+  const [headers, rows] = ParseData(data);
+
+  rows.forEach(row => {
+    let obj = {};
+    const [join, title, speaker, url, youtube, byuspeech, totd] = row;
+    lines.push(row);
+    obj['title'] = title;
+    obj['speaker'] = speaker;
+    obj['url'] = url;
+    obj['youtube'] = youtube;
+    obj['byuspeech'] = byuspeech;
+    obj['totd'] = totd;
+    talkTitles.push(title);
+    talksArr.push(obj)
+    talkObject[obj['title'].toLowerCase()] = obj;
+  });
+
   return;
+
 }
 
 function loadRandomTalk() {
