@@ -57,26 +57,26 @@ async function loadTalks() {
       }
   }
 
-  fetch(sheetUrl, request)
-    .then(response => response)
-    .then(csv => {
-      console.log(csv)
-      const rows = csv.split('\n').map(row => row.split(','));
-      rows.forEach(row => {
-        let obj = {};
-        const [title, speaker, url, youtube, byuspeech, totd] = row;
-        lines.push(row);
-        obj['title'] = title;
-        obj['speaker'] = speaker;
-        obj['url'] = url;
-        obj['youtube'] = youtube;
-        obj['byuspeech'] = byuspeech;
-        obj['totd'] = totd;
-        talkTitles.push(title);
-        talksArr.push(obj)
-        talkObject[obj['title'].toLowerCase()] = obj;
-      });
-    });
+  // fetch(sheetUrl, request)
+  //   .then(response => response)
+  //   .then(csv => {
+  //     console.log(csv)
+  //     const rows = csv.split('\n').map(row => row.split(','));
+  //     rows.forEach(row => {
+  //       let obj = {};
+  //       const [title, speaker, url, youtube, byuspeech, totd] = row;
+  //       lines.push(row);
+  //       obj['title'] = title;
+  //       obj['speaker'] = speaker;
+  //       obj['url'] = url;
+  //       obj['youtube'] = youtube;
+  //       obj['byuspeech'] = byuspeech;
+  //       obj['totd'] = totd;
+  //       talkTitles.push(title);
+  //       talksArr.push(obj)
+  //       talkObject[obj['title'].toLowerCase()] = obj;
+  //     });
+  //   });
   return;
 }
 
