@@ -16,6 +16,43 @@ function getWildCardLinkText(){
   return text
 }
 
+function applyTalkMedia(talk, youtubeLink, ldsLink, iframe) {
+  const youtube = (talk.youtube || '').trim();
+  const url = (talk.url || '').trim();
+  const byuSpeech = (talk.byuspeech || '').trim();
+
+  if (youtube) {
+    youtubeLink.style.display = 'flex';
+    youtubeLink.href = youtube;
+  } else {
+    youtubeLink.style.display = 'none';
+    youtubeLink.removeAttribute('href');
+  }
+
+  if (!url && !byuSpeech) {
+    ldsLink.style.display = 'none';
+    ldsLink.removeAttribute('href');
+    iframe.style.display = 'none';
+    iframe.src = 'about:blank';
+    return;
+  }
+
+  ldsLink.style.display = 'flex';
+
+  if (!url) {
+    ldsLink.innerText = 'BYU Speeches';
+    ldsLink.href = byuSpeech;
+    iframe.style.display = 'block';
+    iframe.src = 'https://www.churchofjesuschrist.org/?lang=eng';
+    return;
+  }
+
+  ldsLink.innerText = getWildCardLinkText();
+  ldsLink.href = url;
+  iframe.style.display = 'block';
+  iframe.src = url;
+}
+
 async function fetchData(sheet) {
   try {
     const res = await fetch(`https://getsheet.josh-bullough12.workers.dev?spreadsheet=${sheet.spreadsheet}&sheet=${sheet.sheetName}`);
@@ -100,25 +137,8 @@ function loadRandomTalk() {
 
     title.innerText = talk.title;
     speaker.innerText = talk.speaker;
-    youtubeLink.href = talk.youtube;
+    applyTalkMedia(talk, youtubeLink, ldsLink, iframe);
 
-    if (talk.url == "" && talk.byuspeech == ""){
-      ldsLink.style.display = "none"
-    }
-    else if (talk.url == "") {
-      ldsLink.style.display = "flex"
-      ldsLink.innerText = 'BYU Speeches'
-      ldsLink.href = talk.byuspeech
-      iframe.src = 'https://www.churchofjesuschrist.org/?lang=eng'
-    } else {
-      ldsLink.style.display = "flex"
-      ldsLink.innerText = getWildCardLinkText();
-      ldsLink.href = talk.url
-      iframe.src = talk.url
-    }
-
-    // iframe.src = talk.url;
-    iframe.style.display = 'block';
     talkcard.style.display = 'block';
     loadingscreen.style.display = 'none';
 
@@ -150,25 +170,8 @@ function searchTalk() {
         activeTalk = talk;
         title.innerText = talk.title;
         speaker.innerText = talk.speaker;
-        youtubeLink.href = talk.youtube;
+        applyTalkMedia(talk, youtubeLink, ldsLink, iframe);
 
-        if (talk.url == "" && talk.byuspeech == ""){
-          ldsLink.style.display = "none"
-        }
-        else if (talk.url == "") {
-          ldsLink.style.display = "flex"
-          ldsLink.innerText = 'BYU Speeches'
-          ldsLink.href = talk.byuspeech
-          iframe.src = 'https://www.churchofjesuschrist.org/?lang=eng'
-        } else {
-          ldsLink.style.display = "flex"
-          ldsLink.innerText = getWildCardLinkText();
-          ldsLink.href = talk.url
-          iframe.src = talk.url
-        }
-
-        // iframe.src = talk.url;
-        iframe.style.display = 'block';
         talkcard.style.display = 'block';
         loadingscreen.style.display = 'none';
         return
@@ -243,25 +246,8 @@ function loadSavedTalk() {
     localStorage.removeItem('savedTalk');
     title.innerText = talk.title;
     speaker.innerText = talk.speaker;
-    youtubeLink.href = talk.youtube;
+    applyTalkMedia(talk, youtubeLink, ldsLink, iframe);
 
-    if (talk.url == "" && talk.byuspeech == ""){
-      ldsLink.style.display = "none"
-    }
-    else if (talk.url == "") {
-      ldsLink.style.display = "flex"
-      ldsLink.innerText = 'BYU Speeches'
-      ldsLink.href = talk.byuspeech
-      iframe.src = 'https://www.churchofjesuschrist.org/?lang=eng'
-    } else {
-      ldsLink.style.display = "flex"
-      ldsLink.innerText = getWildCardLinkText();
-      ldsLink.href = talk.url
-      iframe.src = talk.url
-    }
-
-    // iframe.src = talk.url;
-    iframe.style.display = 'block';
     talkcard.style.display = 'block';
     loadingscreen.style.display = 'none';
 
@@ -566,15 +552,8 @@ function loadTalkOfTheDay(){
       activeTalk = talk;
       title.innerText = talk.title;
       speaker.innerText = talk.speaker;
-      youtubeLink.href = talk.youtube;
+      applyTalkMedia(talk, youtubeLink, ldsLink, iframe);
 
-      ldsLink.style.display = "flex"
-      ldsLink.innerText = getWildCardLinkText();
-      ldsLink.href = talk.url
-      iframe.src = talk.url
-
-      // iframe.src = talk.url;
-      iframe.style.display = 'block';
       talkcard.style.display = 'block';
       loadingscreen.style.display = 'none';
       return
