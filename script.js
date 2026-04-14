@@ -243,6 +243,35 @@ function getMostRecentlyAddedTalk() {
   return talksWithDates[0].talk;
 }
 
+function getCalendarDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function hashString(text) {
+  let hash = 2166136261;
+
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return hash >>> 0;
+}
+
+function getTalkOfTheDay(date = new Date()) {
+  if (talksArr.length === 0) {
+    return null;
+  }
+
+  const dateKey = getCalendarDateKey(date);
+  const talkIndex = hashString(dateKey) % talksArr.length;
+  return talksArr[talkIndex];
+}
+
 function setSelectOptions(selectId, placeholder, values) {
   const select = document.getElementById(selectId);
   select.innerHTML = `<option value="">${placeholder}</option>`;
@@ -271,105 +300,96 @@ function sortYears(years) {
   return [...years].sort((a, b) => Number(b) - Number(a));
 }
 
-function getTalksForSelectedType(type = selectedTalkType) {
-  if (!type) {
-    return talksArr;
-  }
-
-  return talksArr.filter(talk => normalizeTypeValue(talk.type) === normalizeTypeValue(type));
+function getCurrentBrowseFilters() {
+  return {
+    type: selectedTalkType,
+    month: document.getElementById('monthSelect')?.value || '',
+    year: document.getElementById('yearSelect')?.value || '',
+    author: document.getElementById('authorSelect')?.value || ''
+  };
 }
 
-function updateAuthorFilterAvailability() {
-  const authorSearchBtn = document.getElementById('authorSearchBtn');
-  const authorSelect = document.getElementById('authorSelect');
-
-  if (!authorSearchBtn || !authorSelect) {
-    return;
-  }
-
-  authorSearchBtn.disabled = !authorSelect.value;
-}
-
-function resetAuthorFilter() {
-  const authorSelect = document.getElementById('authorSelect');
-  populateAuthorOptions();
-  authorSelect.value = '';
-  updateAuthorFilterAvailability();
-}
-
-function populateAuthorOptions(type = selectedTalkType) {
-  const authorSelect = document.getElementById('authorSelect');
-  const filteredTalks = getTalksForSelectedType(type);
-  const authors = getUniqueValues(filteredTalks, 'speaker').sort((a, b) => a.localeCompare(b));
-  const currentValue = authorSelect.value;
-
-  setSelectOptions('authorSelect', 'Choose Author', authors);
-  authorSelect.disabled = authors.length === 0;
-
-  if (authors.includes(currentValue)) {
-    authorSelect.value = currentValue;
-  } else {
-    authorSelect.value = '';
-  }
-
-  updateAuthorFilterAvailability();
-}
-
-function populateMonthOptions(type = selectedTalkType, year = '') {
-  const filteredTalks = getTalksForSelectedType(type).filter(talk => {
-    return !year || normalizeSearchText(talk.year) === normalizeSearchText(year);
-  });
-  const months = sortMonths(getUniqueValues(filteredTalks, 'month')).map(getMonthLabel);
-  const monthSelect = document.getElementById('monthSelect');
-  const currentValue = monthSelect.value;
-  setSelectOptions('monthSelect', 'Choose Month', months);
-  monthSelect.disabled = months.length === 0;
-
-  if (months.includes(currentValue)) {
-    monthSelect.value = currentValue;
-  } else {
-    monthSelect.value = '';
-  }
-}
-
-function populateYearOptions(type = selectedTalkType, month = '') {
-  const yearSelect = document.getElementById('yearSelect');
-  const currentValue = yearSelect.value;
-  const filteredTalks = getTalksForSelectedType(type).filter(talk => {
+function getTalksMatchingFilters({
+  type = selectedTalkType,
+  month = '',
+  year = '',
+  author = ''
+} = {}) {
+  return talksArr.filter(talk => {
+    const sameType = !type || normalizeTypeValue(talk.type) === normalizeTypeValue(type);
     const sameMonth = !month || normalizeMonthValue(talk.month) === normalizeMonthValue(month);
-    return sameMonth;
+    const sameYear = !year || normalizeSearchText(talk.year) === normalizeSearchText(year);
+    const sameAuthor = !author || normalizeSearchText(talk.speaker) === normalizeSearchText(author);
+
+    return sameType && sameMonth && sameYear && sameAuthor;
   });
-  const years = sortYears(getUniqueValues(filteredTalks, 'year'));
-  setSelectOptions('yearSelect', 'Choose Year', years);
-  yearSelect.disabled = years.length === 0;
-
-  if (years.includes(currentValue)) {
-    yearSelect.value = currentValue;
-  } else {
-    yearSelect.value = '';
-  }
 }
 
-function syncDateFilterOptions(type = selectedTalkType) {
-  const yearSelect = document.getElementById('yearSelect');
-  populateMonthOptions(type, yearSelect.value);
-  populateYearOptions(type, document.getElementById('monthSelect').value);
+function getMonthOptions(filters = getCurrentBrowseFilters()) {
+  return sortMonths(getUniqueValues(getTalksMatchingFilters({ ...filters, month: '' }), 'month')).map(getMonthLabel);
 }
 
-function resetDateFilters() {
-  syncDateFilterOptions();
+function getYearOptions(filters = getCurrentBrowseFilters()) {
+  return sortYears(getUniqueValues(getTalksMatchingFilters({ ...filters, year: '' }), 'year'));
 }
 
-function updateDateFilterAvailability() {
-  const dateSearchBtn = document.getElementById('dateSearchBtn');
-  const monthSelect = document.getElementById('monthSelect');
-  const yearSelect = document.getElementById('yearSelect');
+function getAuthorOptions(filters = getCurrentBrowseFilters()) {
+  return getUniqueValues(getTalksMatchingFilters({ ...filters, author: '' }), 'speaker').sort((a, b) => a.localeCompare(b));
+}
 
-  if (!dateSearchBtn || !monthSelect || !yearSelect) {
+function applyBrowseSelectOptions(selectId, placeholder, values, selectedValue) {
+  const select = document.getElementById(selectId);
+
+  if (!select) {
     return;
   }
 
-  dateSearchBtn.disabled = !selectedTalkType && !monthSelect.value && !yearSelect.value;
+  setSelectOptions(selectId, placeholder, values);
+  select.disabled = values.length === 0;
+  select.value = values.includes(selectedValue) ? selectedValue : '';
+}
+
+function updateBrowseFilterAvailability() {
+  const filterSearchBtn = document.getElementById('filterSearchBtn');
+  const { type, month, year, author } = getCurrentBrowseFilters();
+
+  if (!filterSearchBtn) {
+    return;
+  }
+
+  filterSearchBtn.disabled = !type && !month && !year && !author;
+}
+
+function syncBrowseFilterOptions() {
+  const filters = getCurrentBrowseFilters();
+  let previousSnapshot = '';
+  let nextSnapshot = JSON.stringify(filters);
+
+  while (previousSnapshot !== nextSnapshot) {
+    previousSnapshot = nextSnapshot;
+
+    const authorOptions = getAuthorOptions(filters);
+    if (filters.author && !authorOptions.includes(filters.author)) {
+      filters.author = '';
+    }
+
+    const monthOptions = getMonthOptions(filters);
+    if (filters.month && !monthOptions.includes(filters.month)) {
+      filters.month = '';
+    }
+
+    const yearOptions = getYearOptions(filters);
+    if (filters.year && !yearOptions.includes(filters.year)) {
+      filters.year = '';
+    }
+
+    nextSnapshot = JSON.stringify(filters);
+  }
+
+  applyBrowseSelectOptions('monthSelect', 'Choose Month', getMonthOptions(filters), filters.month);
+  applyBrowseSelectOptions('yearSelect', 'Choose Year', getYearOptions(filters), filters.year);
+  applyBrowseSelectOptions('authorSelect', 'Choose Author', getAuthorOptions(filters), filters.author);
+  updateBrowseFilterAvailability();
 }
 
 function updateTypeButtons() {
@@ -389,11 +409,11 @@ function updateTypeSelectionStatus() {
   }
 
   if (!selectedTalkType) {
-    status.innerText = 'Collection is optional. Choose one to narrow the month, year, and author filters below.';
+    status.innerText = 'Collection is optional. Choose one to narrow the filters below.';
     return;
   }
 
-  status.innerText = `${getTypeLabel(selectedTalkType)} selected. The month, year, and author filters are now narrowed to this collection.`;
+  status.innerText = `${getTypeLabel(selectedTalkType)} selected. The filters below are now narrowed to this collection.`;
 }
 
 function loadMostRecentTalk() {
@@ -411,35 +431,47 @@ function loadMostRecentTalk() {
   renderTalk(recentTalk);
 }
 
+function loadTalkOfTheDay() {
+  const talkOfTheDay = getTalkOfTheDay();
+
+  if (!talkOfTheDay) {
+    showAppAlert({
+      title: 'Nothing To Load Yet',
+      text: 'No talk of the day is available right now.',
+      icon: 'info'
+    });
+    return;
+  }
+
+  renderTalk(talkOfTheDay);
+}
+
 function selectTalkType(typeValue) {
   const normalizedType = normalizeTypeValue(typeValue);
 
   if (selectedTalkType === normalizedType) {
     selectedTalkType = '';
-    syncDateFilterOptions();
-    populateAuthorOptions();
-    updateDateFilterAvailability();
+    syncBrowseFilterOptions();
     updateTypeButtons();
     updateTypeSelectionStatus();
     return;
   }
 
   selectedTalkType = normalizedType;
-  syncDateFilterOptions(selectedTalkType);
-  populateAuthorOptions(selectedTalkType);
-  updateDateFilterAvailability();
+  syncBrowseFilterOptions();
   updateTypeButtons();
   updateTypeSelectionStatus();
 }
 
-function initializeDateFilters() {
+function initializeBrowseFilters() {
   const monthSelect = document.getElementById('monthSelect');
   const yearSelect = document.getElementById('yearSelect');
+  const authorSelect = document.getElementById('authorSelect');
   const typeButtons = document.querySelectorAll('.chip-button[data-type]');
   const recentButton = document.getElementById('recentTalkBtn');
+  const talkOfDayButton = document.getElementById('talkOfDayBtn');
 
-  resetDateFilters();
-  updateDateFilterAvailability();
+  syncBrowseFilterOptions();
   updateTypeButtons();
   updateTypeSelectionStatus();
 
@@ -455,23 +487,22 @@ function initializeDateFilters() {
     });
   }
 
+  if (talkOfDayButton) {
+    talkOfDayButton.addEventListener('click', function () {
+      loadTalkOfTheDay();
+    });
+  }
+
   monthSelect.addEventListener('change', function () {
-    syncDateFilterOptions(selectedTalkType);
-    updateDateFilterAvailability();
+    syncBrowseFilterOptions();
   });
 
   yearSelect.addEventListener('change', function () {
-    syncDateFilterOptions(selectedTalkType);
-    updateDateFilterAvailability();
+    syncBrowseFilterOptions();
   });
-}
-
-function initializeAuthorFilter() {
-  const authorSelect = document.getElementById('authorSelect');
-  resetAuthorFilter();
 
   authorSelect.addEventListener('change', function () {
-    updateAuthorFilterAvailability();
+    syncBrowseFilterOptions();
   });
 }
 
@@ -546,63 +577,24 @@ function renderTalk(talk) {
   setTimeout(finishLoading, 900);
 }
 
-function searchByDate() {
-  const month = document.getElementById('monthSelect').value;
-  const year = document.getElementById('yearSelect').value;
+function searchByFilters() {
+  const filters = getCurrentBrowseFilters();
 
-  if (!selectedTalkType && !month && !year) {
+  if (!filters.type && !filters.month && !filters.year && !filters.author) {
     showAppAlert({
       title: 'Choose a Filter',
-      text: 'Choose a collection, month, or year first.',
+      text: 'Choose a collection, month, year, or author first.',
       icon: 'warning'
     });
     return;
   }
 
-  const matches = talksArr.filter(talk => {
-    const sameType = !selectedTalkType || normalizeTypeValue(talk.type) === selectedTalkType;
-    const sameMonth = !month || normalizeMonthValue(talk.month) === normalizeMonthValue(month);
-    const sameYear = !year || normalizeSearchText(talk.year) === normalizeSearchText(year);
-
-    return sameType && sameMonth && sameYear;
-  });
+  const matches = getTalksMatchingFilters(filters);
 
   if (matches.length === 0) {
     showAppAlert({
       title: 'No Matches Found',
       text: 'No talks matched those filters.',
-      icon: 'info'
-    });
-    return;
-  }
-
-  const randomMatch = matches[Math.floor(Math.random() * matches.length)];
-  renderTalk(randomMatch);
-}
-
-function searchByAuthor() {
-  const author = document.getElementById('authorSelect').value;
-
-  if (!author) {
-    showAppAlert({
-      title: 'Choose an Author',
-      text: 'Choose an author first.',
-      icon: 'warning'
-    });
-    return;
-  }
-
-  const matches = talksArr.filter(talk => {
-    const sameType = !selectedTalkType || normalizeTypeValue(talk.type) === selectedTalkType;
-    return sameType && normalizeSearchText(talk.speaker) === normalizeSearchText(author);
-  });
-
-  if (matches.length === 0) {
-    showAppAlert({
-      title: 'No Matches Found',
-      text: selectedTalkType
-        ? 'No talks matched that author in the selected collection.'
-        : 'No talks matched that author.',
       icon: 'info'
     });
     return;
@@ -1023,8 +1015,7 @@ showPlaySavedTalk();
 loadTalks().then(() => {
   /*initiate the autocomplete function on the "myInput" element, and pass along the countries array as possible autocomplete values:*/
   autocomplete(document.getElementById("myInput"), talksArr);
-  initializeDateFilters();
-  initializeAuthorFilter();
+  initializeBrowseFilters();
 });
 
 

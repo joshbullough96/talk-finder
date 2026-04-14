@@ -178,7 +178,7 @@ main {
 
 #instructional p:last-of-type {
     color: var(--muted);
-    max-width: 34rem;
+    max-width: 48rem;
 }
 
 .feature-chips {
@@ -188,17 +188,12 @@ main {
     margin-top: 8px;
 }
 
-#typeFilter {
-    display: grid;
-    gap: 14px;
-}
-
 #quickActions {
     display: grid;
     gap: 14px;
 }
 
-#typeFilter .feature-chips {
+#browseFilters .feature-chips {
     margin-top: 0;
 }
 
@@ -284,8 +279,7 @@ main {
 }
 
 #myInput,
-#filterControls select,
-#authorControls select,
+#browseControls select,
 #emailsection input,
 #progress-section input {
     width: 100%;
@@ -299,8 +293,7 @@ main {
 }
 
 #myInput:focus,
-#filterControls select:focus,
-#authorControls select:focus,
+#browseControls select:focus,
 #emailsection input:focus,
 #progress-section input:focus {
     outline: none;
@@ -308,25 +301,18 @@ main {
     box-shadow: 0 0 0 4px rgba(20, 82, 109, 0.1);
 }
 
-.filter-grid {
+#browseFilters {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px;
-    align-items: start;
+    gap: 14px;
 }
 
-#filterSearch,
-#authorSearch {
-    margin-bottom: 0;
-}
-
-#filterControls {
+#browseControls {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
 }
 
-#filterControls .btn {
+#browseControls .btn {
     grid-column: 1 / -1;
 }
 
@@ -336,18 +322,7 @@ main {
     font-size: 0.95rem;
 }
 
-#authorControls {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
-}
-
-#authorControls .btn {
-    width: 100%;
-}
-
-#filterControls select:disabled,
-#authorControls select:disabled,
+#browseControls select:disabled,
 .btn:disabled {
     opacity: 0.58;
     cursor: not-allowed;
@@ -659,7 +634,6 @@ input[type=range] {
 @media (max-width: 1040px) {
     .site-header,
     .hero-layout,
-    .filter-grid,
     .support-grid,
     .result-top,
     #card {
@@ -692,8 +666,7 @@ input[type=range] {
     }
 
     #searchdiv form,
-    #filterControls,
-    #authorControls,
+    #browseControls,
     .action-row {
         grid-template-columns: 1fr;
     }

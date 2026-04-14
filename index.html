@@ -50,56 +50,38 @@
                     <div id="quickActions" class="panel control-card">
                         <div class="control-header">
                             <label>Quick Picks</label>
-                            <p>Jump into something uplifting right away, or return to the talk you saved for later.</p>
+                            <p>Jump into something uplifting right away, pick the daily talk, or return to the talk you saved for later.</p>
                         </div>
                         <div id="actions" class="action-row">
                             <button class="btn btn-secondary" onclick="loadRandomTalk(); return false">Random Talk</button>
                             <button class="btn btn-secondary" id="recentTalkBtn" type="button">Recently Added</button>
+                            <button class="btn btn-secondary" id="talkOfDayBtn" type="button">Talk of the Day</button>
                             <button class="btn btn-secondary" id="savedTalks" onclick="loadSavedTalk(); return false">Saved
                                 Talk</button>
                         </div>
                     </div>
 
-                    <div id="typeFilter" class="panel control-card">
+                    <div id="browseFilters" class="panel control-card">
                         <div class="control-header">
-                            <label>Browse by collection</label>
-                            <p>Choose General Conference or Devotionals to narrow the filters below, or leave both off to search everything.</p>
+                            <label>Browse filters</label>
+                            <p>Use collection, month, year, author, or any combination to narrow the next talk.</p>
                         </div>
                         <div class="feature-chips">
                             <button class="chip chip-button" type="button" data-type="general conference">General Conference</button>
                             <button class="chip chip-button" type="button" data-type="devo">Devotionals</button>
                         </div>
-                        <p id="typeSelectionStatus" class="selection-status">Collection is optional. Choose one to narrow the month, year, and author filters below.</p>
-                    </div>
-
-                    <div class="filter-grid">
-                        <div id="filterSearch" class="panel control-card">
-                            <div class="control-header">
-                                <label>Find by date given</label>
-                                <p>Choose a month, a year, or both. The collection filter above is optional.</p>
-                            </div>
-                            <div id="filterControls">
-                                <select id="monthSelect">
-                                    <option value="">Choose Month</option>
-                                </select>
-                                <select id="yearSelect">
-                                    <option value="">Choose Year</option>
-                                </select>
-                                <button class="btn" id="dateSearchBtn" onclick="searchByDate(); return false" disabled>Find Talk</button>
-                            </div>
-                        </div>
-
-                        <div id="authorSearch" class="panel control-card">
-                            <div class="control-header">
-                                <label>Find by author</label>
-                                <p>Pick any speaker, or use the collection filter above to narrow the list first.</p>
-                            </div>
-                            <div id="authorControls">
-                                <select id="authorSelect">
-                                    <option value="">Choose Author</option>
-                                </select>
-                                <button class="btn" id="authorSearchBtn" onclick="searchByAuthor(); return false" disabled>Find Author Talk</button>
-                            </div>
+                        <p id="typeSelectionStatus" class="selection-status">Collection is optional. Choose one to narrow the filters below.</p>
+                        <div id="browseControls">
+                            <select id="monthSelect">
+                                <option value="">Choose Month</option>
+                            </select>
+                            <select id="yearSelect">
+                                <option value="">Choose Year</option>
+                            </select>
+                            <select id="authorSelect">
+                                <option value="">Choose Author</option>
+                            </select>
+                            <button class="btn" id="filterSearchBtn" onclick="searchByFilters(); return false" disabled>Find Talk</button>
                         </div>
                     </div>
                 </div>
