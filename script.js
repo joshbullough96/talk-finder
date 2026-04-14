@@ -3,6 +3,34 @@ var talkObject = {};
 var talkTitles = [];
 var activeTalk = {};
 var savedItem;
+const monthOrder = [
+  'january',
+  'february',
+  'march',
+  'april',
+  'may',
+  'june',
+  'july',
+  'august',
+  'september',
+  'october',
+  'november',
+  'december'
+];
+const monthLabels = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December'
+];
 
 // manualRemoveAllListenedTo('listenedTo') //comment out when done.
 
@@ -80,6 +108,245 @@ function ParseData(data, hasHeaders = true) {
 
 }
 
+function normalizeSearchText(text) {
+  return (text || '').trim().toLowerCase();
+}
+
+function getMonthLabel(monthValue) {
+  const normalizedMonth = normalizeSearchText(monthValue);
+  const monthNumber = Number(normalizedMonth);
+
+  if (!Number.isNaN(monthNumber) && monthNumber >= 1 && monthNumber <= 12) {
+    return monthLabels[monthNumber - 1];
+  }
+
+  const monthIndex = monthOrder.indexOf(normalizedMonth);
+  if (monthIndex >= 0) {
+    return monthLabels[monthIndex];
+  }
+
+  return monthValue;
+}
+
+function normalizeMonthValue(monthValue) {
+  return normalizeSearchText(getMonthLabel(monthValue));
+}
+
+function parseDateAdded(dateText) {
+  if (!dateText) {
+    return null;
+  }
+
+  const parsedDate = new Date(dateText);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return null;
+  }
+
+  return parsedDate;
+}
+
+function getMostRecentlyAddedTalk() {
+  const talksWithDates = talksArr
+    .filter(talk => talk.dateAdded)
+    .map(talk => ({
+      talk,
+      parsedDate: parseDateAdded(talk.dateAdded)
+    }))
+    .filter(item => item.parsedDate);
+
+  if (talksWithDates.length === 0) {
+    return null;
+  }
+
+  talksWithDates.sort((a, b) => b.parsedDate - a.parsedDate);
+  return talksWithDates[0].talk;
+}
+
+function isRecentSearch(text) {
+  const normalizedText = normalizeSearchText(text);
+  return normalizedText === 'recent'
+    || normalizedText === 'recently added'
+    || normalizedText === 'newest'
+    || normalizedText === 'latest';
+}
+
+function setSelectOptions(selectId, placeholder, values) {
+  const select = document.getElementById(selectId);
+  select.innerHTML = `<option value="">${placeholder}</option>`;
+
+  values.forEach(value => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = value;
+    select.appendChild(option);
+  });
+}
+
+function getUniqueValues(items, key) {
+  return [...new Set(items
+    .map(item => (item[key] || '').trim())
+    .filter(Boolean))];
+}
+
+function sortMonths(months) {
+  return [...months].sort((a, b) => {
+    return monthOrder.indexOf(normalizeMonthValue(a)) - monthOrder.indexOf(normalizeMonthValue(b));
+  });
+}
+
+function sortYears(years) {
+  return [...years].sort((a, b) => Number(b) - Number(a));
+}
+
+function populateTypeOptions() {
+  const types = getUniqueValues(talksArr, 'type').sort((a, b) => a.localeCompare(b));
+  setSelectOptions('typeSelect', 'Choose Type', types);
+}
+
+function populateAuthorOptions() {
+  const authors = getUniqueValues(talksArr, 'speaker').sort((a, b) => a.localeCompare(b));
+  setSelectOptions('authorSelect', 'Choose Author', authors);
+}
+
+function populateMonthOptions(type) {
+  const filteredTalks = talksArr.filter(talk => normalizeSearchText(talk.type) === normalizeSearchText(type));
+  const months = sortMonths(getUniqueValues(filteredTalks, 'month')).map(getMonthLabel);
+  const monthSelect = document.getElementById('monthSelect');
+  setSelectOptions('monthSelect', 'Choose Month', months);
+  monthSelect.disabled = months.length === 0;
+}
+
+function populateYearOptions(type, month = '') {
+  const filteredTalks = talksArr.filter(talk => {
+    const sameType = normalizeSearchText(talk.type) === normalizeSearchText(type);
+    const sameMonth = !month || normalizeMonthValue(talk.month) === normalizeMonthValue(month);
+    return sameType && sameMonth;
+  });
+  const years = sortYears(getUniqueValues(filteredTalks, 'year'));
+  const yearSelect = document.getElementById('yearSelect');
+  setSelectOptions('yearSelect', 'Choose Year', years);
+  yearSelect.disabled = years.length === 0;
+}
+
+function resetDateFilters() {
+  const monthSelect = document.getElementById('monthSelect');
+  const yearSelect = document.getElementById('yearSelect');
+  setSelectOptions('monthSelect', 'Choose Month', []);
+  setSelectOptions('yearSelect', 'Choose Year', []);
+  monthSelect.disabled = true;
+  yearSelect.disabled = true;
+}
+
+function initializeDateFilters() {
+  const typeSelect = document.getElementById('typeSelect');
+  const monthSelect = document.getElementById('monthSelect');
+  const yearSelect = document.getElementById('yearSelect');
+
+  populateTypeOptions();
+  resetDateFilters();
+
+  typeSelect.addEventListener('change', function () {
+    if (!this.value) {
+      resetDateFilters();
+      return;
+    }
+
+    populateMonthOptions(this.value);
+    monthSelect.value = '';
+    setSelectOptions('yearSelect', 'Choose Year', []);
+    yearSelect.value = '';
+    yearSelect.disabled = true;
+  });
+
+  monthSelect.addEventListener('change', function () {
+    const selectedType = typeSelect.value;
+    if (!selectedType) {
+      return;
+    }
+
+    if (!this.value) {
+      setSelectOptions('yearSelect', 'Choose Year', []);
+      yearSelect.value = '';
+      yearSelect.disabled = true;
+      return;
+    }
+
+    populateYearOptions(selectedType, this.value);
+  });
+}
+
+function initializeAuthorFilter() {
+  populateAuthorOptions();
+}
+
+function renderTalk(talk) {
+  const talkcard = document.getElementById('talkcard');
+  const loadingscreen = document.getElementById('loadingScreen');
+  const title = document.getElementById('Title');
+  const speaker = document.getElementById('Speaker');
+  const youtubeLink = document.getElementById('YoutubeLink');
+  const ldsLink = document.getElementById('Url');
+  const iframe = document.getElementById('TalkIframe');
+
+  loadingscreen.style.display = 'block';
+  talkcard.style.display = 'none';
+
+  setTimeout(() => {
+    activeTalk = talk;
+    title.innerText = talk.title;
+    speaker.innerText = talk.speaker;
+    applyTalkMedia(talk, youtubeLink, ldsLink, iframe);
+
+    talkcard.style.display = 'block';
+    loadingscreen.style.display = 'none';
+  }, 3000);
+}
+
+function searchByDate() {
+  const type = document.getElementById('typeSelect').value;
+  const month = document.getElementById('monthSelect').value;
+  const year = document.getElementById('yearSelect').value;
+
+  if (!type || !month || !year) {
+    alert('Choose a type, month, and year first.');
+    return;
+  }
+
+  const matches = talksArr.filter(talk => {
+    return normalizeSearchText(talk.type) === normalizeSearchText(type)
+      && normalizeMonthValue(talk.month) === normalizeMonthValue(month)
+      && normalizeSearchText(talk.year) === normalizeSearchText(year);
+  });
+
+  if (matches.length === 0) {
+    alert('No talks matched that type, month, and year.');
+    return;
+  }
+
+  const randomMatch = matches[Math.floor(Math.random() * matches.length)];
+  renderTalk(randomMatch);
+}
+
+function searchByAuthor() {
+  const author = document.getElementById('authorSelect').value;
+
+  if (!author) {
+    alert('Choose an author first.');
+    return;
+  }
+
+  const matches = talksArr.filter(talk => normalizeSearchText(talk.speaker) === normalizeSearchText(author));
+
+  if (matches.length === 0) {
+    alert('No talks matched that author.');
+    return;
+  }
+
+  const randomMatch = matches[Math.floor(Math.random() * matches.length)];
+  renderTalk(randomMatch);
+}
+
 async function loadTalks() { 
   
   const sheet = {
@@ -95,17 +362,20 @@ async function loadTalks() {
 
   rows.forEach(row => {
     let obj = {};
-    const [join, title, speaker, url, youtube, byuspeech, totd] = row;
+    const [title, speaker, url, youtube, byuspeech, dateAdded, month, year, type] = row;
     lines.push(row);
     obj['title'] = title;
     obj['speaker'] = speaker;
     obj['url'] = url;
     obj['youtube'] = youtube;
     obj['byuspeech'] = byuspeech;
-    obj['totd'] = totd;
+    obj['dateAdded'] = dateAdded;
+    obj['month'] = month;
+    obj['year'] = year;
+    obj['type'] = type;
     talkTitles.push(title);
     talksArr.push(obj)
-    talkObject[obj['title'].toLowerCase()] = obj;
+    talkObject[normalizeSearchText(obj['title'])] = obj;
   });
 
   return;
@@ -113,71 +383,33 @@ async function loadTalks() {
 }
 
 function loadRandomTalk() {
-  const talkcard = document.getElementById('talkcard');
-  const loadingscreen = document.getElementById('loadingScreen');
-  const title = document.getElementById('Title');
-  const speaker = document.getElementById('Speaker');
-  const youtubeLink = document.getElementById('YoutubeLink');
-  const ldsLink = document.getElementById('Url');
-  const iframe = document.getElementById('TalkIframe');
+  const listenedToArr = getWithExpiry('listenedTo');
+  let availableTalks = talksArr;
 
-  loadingscreen.style.display = 'block';
-  talkcard.style.display = 'none';
-
-  setTimeout(() => {
-
-    const listenedToArr = getWithExpiry('listenedTo');
-    const rand = Math.floor(Math.random() * talksArr.length)
-    if(listenedToArr) {
-      talksArr = talksArr.filter(x=>!listenedToArr.includes(x.title));
-    }
-
-    const talk = talksArr[rand];
-    activeTalk = talk;
-
-    title.innerText = talk.title;
-    speaker.innerText = talk.speaker;
-    applyTalkMedia(talk, youtubeLink, ldsLink, iframe);
-
-    talkcard.style.display = 'block';
-    loadingscreen.style.display = 'none';
-
-    return
-
+  if (listenedToArr) {
+    availableTalks = talksArr.filter(x => !listenedToArr.includes(x.title));
   }
-    , 3000)
+
+  if (availableTalks.length === 0) {
+    alert('There are no talks available right now. Try clearing your listened list.');
+    return;
+  }
+
+  const rand = Math.floor(Math.random() * availableTalks.length);
+  const talk = availableTalks[rand];
+  renderTalk(talk);
 
 }
 
 function searchTalk() {
   const text = document.getElementById('myInput').value;
   try {
-    talk = talkObject[text.toLowerCase()]
+    let talk = talkObject[normalizeSearchText(text)];
+    if (!talk && isRecentSearch(text)) {
+      talk = getMostRecentlyAddedTalk();
+    }
     if (talk != undefined) {
-      const talkcard = document.getElementById('talkcard');
-      const loadingscreen = document.getElementById('loadingScreen');
-      const title = document.getElementById('Title');
-      const speaker = document.getElementById('Speaker');
-      const youtubeLink = document.getElementById('YoutubeLink');
-      const ldsLink = document.getElementById('Url');
-      const iframe = document.getElementById('TalkIframe');
-
-      loadingscreen.style.display = 'block';
-      talkcard.style.display = 'none';
-
-      setTimeout(() => {
-
-        activeTalk = talk;
-        title.innerText = talk.title;
-        speaker.innerText = talk.speaker;
-        applyTalkMedia(talk, youtubeLink, ldsLink, iframe);
-
-        talkcard.style.display = 'block';
-        loadingscreen.style.display = 'none';
-        return
-
-      }
-        , 3000)
+      renderTalk(talk);
     } else {
       document.getElementById('myInput').style.border = '2px solid red';
       setTimeout(()=>{
@@ -229,34 +461,10 @@ function saveTalk() {
 }
 
 function loadSavedTalk() {
-  const talkcard = document.getElementById('talkcard');
-  const loadingscreen = document.getElementById('loadingScreen');
-  const title = document.getElementById('Title');
-  const speaker = document.getElementById('Speaker');
-  const youtubeLink = document.getElementById('YoutubeLink');
-  const ldsLink = document.getElementById('Url');
-  const iframe = document.getElementById('TalkIframe');
-
-  loadingscreen.style.display = 'block';
-  talkcard.style.display = 'none';
-
-  setTimeout(() => {
-
-    const talk = JSON.parse(localStorage.getItem('savedTalk')); //activeTalk;
-    localStorage.removeItem('savedTalk');
-    title.innerText = talk.title;
-    speaker.innerText = talk.speaker;
-    applyTalkMedia(talk, youtubeLink, ldsLink, iframe);
-
-    talkcard.style.display = 'block';
-    loadingscreen.style.display = 'none';
-
-    showPlaySavedTalk();
-
-    return
-
-  }
-    , 3000)
+  const talk = JSON.parse(localStorage.getItem('savedTalk')); //activeTalk;
+  localStorage.removeItem('savedTalk');
+  renderTalk(talk);
+  showPlaySavedTalk();
 }
 
 function setWithExpiry(key, value, ttl) {
@@ -532,35 +740,6 @@ function fillFinishByDate(){
     document.getElementById('finishByDate').innerText = finishDate;
 }
 
-function loadTalkOfTheDay(){
-
-      const talkcard = document.getElementById('talkcard');
-      const loadingscreen = document.getElementById('loadingScreen');
-      const title = document.getElementById('Title');
-      const speaker = document.getElementById('Speaker');
-      const youtubeLink = document.getElementById('YoutubeLink');
-      const ldsLink = document.getElementById('Url');
-      const iframe = document.getElementById('TalkIframe');
-      // const text = 'Motions of a Hidden Fire';
-      const today = new Date().toLocaleDateString();
-      loadingscreen.style.display = 'block';
-      talkcard.style.display = 'none';
-
-      setTimeout(() => {
-      talk = talksArr.find(x => x.totd === today) || talksArr[0]; //talkObject[text.toLowerCase()
-      
-      activeTalk = talk;
-      title.innerText = talk.title;
-      speaker.innerText = talk.speaker;
-      applyTalkMedia(talk, youtubeLink, ldsLink, iframe);
-
-      talkcard.style.display = 'block';
-      loadingscreen.style.display = 'none';
-      return
-      }
-      , 3000)
-}
-
 const form = document.querySelector('form');
 const username = document.getElementById('name');
 const email = document.getElementById('email');
@@ -572,6 +751,8 @@ showPlaySavedTalk();
 loadTalks().then(() => {
   /*initiate the autocomplete function on the "myInput" element, and pass along the countries array as possible autocomplete values:*/
   autocomplete(document.getElementById("myInput"), talksArr);
+  initializeDateFilters();
+  initializeAuthorFilter();
 });
 
 

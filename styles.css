@@ -86,6 +86,62 @@ main {
     margin-bottom: 20px;
 }
 
+#filterSearch {
+    margin-bottom: 20px;
+}
+
+#filterSearch label {
+    display: block;
+    margin-bottom: 8px;
+}
+
+#filterControls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+#filterControls select {
+    min-width: 180px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+}
+
+#filterControls button {
+    max-width: 220px;
+}
+
+#authorSearch {
+    margin-bottom: 20px;
+}
+
+#authorSearch label {
+    display: block;
+    margin-bottom: 8px;
+}
+
+#authorControls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+#authorControls select {
+    min-width: 240px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+}
+
+#authorControls button {
+    max-width: 240px;
+}
+
 .autocomplete {
     width: 70%;
 }
@@ -400,6 +456,24 @@ iframe#TalkIframe {
         height: 41px;
         line-height: 2em;
         width: 30%;
+    }
+
+    #filterControls {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    #filterControls select,
+    #filterControls button,
+    #authorControls select,
+    #authorControls button {
+        width: 100%;
+        max-width: none;
+    }
+
+    #authorControls {
+        display: grid;
+        grid-template-columns: 1fr;
     }
 }
 

@@ -36,9 +36,34 @@
                         </form>
                     </div>
 
+                    <div id="filterSearch">
+                        <label>Find by type and date given</label>
+                        <div id="filterControls">
+                            <select id="typeSelect">
+                                <option value="">Choose Type</option>
+                            </select>
+                            <select id="monthSelect" disabled>
+                                <option value="">Choose Month</option>
+                            </select>
+                            <select id="yearSelect" disabled>
+                                <option value="">Choose Year</option>
+                            </select>
+                            <button class="btn" onclick="searchByDate(); return false">Find Talk</button>
+                        </div>
+                    </div>
+
+                    <div id="authorSearch">
+                        <label>Find by author</label>
+                        <div id="authorControls">
+                            <select id="authorSelect">
+                                <option value="">Choose Author</option>
+                            </select>
+                            <button class="btn" onclick="searchByAuthor(); return false">Find Author Talk</button>
+                        </div>
+                    </div>
+
                     <div id="actions">
                         <button class="btn" onclick="loadRandomTalk(); return false">Random Talk</button>
-                        <button class="btn talkoftheday" onclick="loadTalkOfTheDay(); return false">Talk Of The Day</button>
                         <button class="btn" id="savedTalks" onclick="loadSavedTalk(); return false">Saved Talk</button>
                     </div>
 
