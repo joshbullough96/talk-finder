@@ -2,18 +2,24 @@
 .autocomplete {
   position: relative;
   display: inline-block;
+  z-index: 40;
 }
 
 /* Adjusted for responsive width and positioning: */
 .autocomplete-items {
   position: absolute;
-  border: 1px solid #d4d4d4;
-  border-bottom: none;
+  border: 1px solid rgba(23, 50, 74, 0.14);
   border-top: none;
-  z-index: 99;
+  z-index: 999;
   top: 100%; /* Adjusted to start right below the container */
   width: 100%; /* Ensure it spans the full width of the container */
   left: 0; /* Align with the left edge of the container */
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 18px;
+  background-color: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 24px 50px rgba(18, 49, 71, 0.18);
+  backdrop-filter: blur(14px);
 }
 
 /* Style for individual items: */

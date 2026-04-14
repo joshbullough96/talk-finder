@@ -3,6 +3,8 @@ var talkObject = {};
 var talkTitles = [];
 var activeTalk = {};
 var savedItem;
+let selectedTalkType = '';
+let renderTalkToken = 0;
 const monthOrder = [
   'january',
   'february',
@@ -42,6 +44,56 @@ function getWildCardLinkText(){
     text = 'churchofjesuschrist.org'
   }
   return text
+}
+
+function showAppAlert({ title = 'Heads up', text = '', icon = 'info', confirmButtonText = 'Okay' } = {}) {
+  if (typeof Swal === 'undefined') {
+    alert(text || title);
+    return Promise.resolve();
+  }
+
+  return Swal.fire({
+    title,
+    text,
+    icon,
+    confirmButtonText,
+    buttonsStyling: false,
+    customClass: {
+      popup: 'talk-swal',
+      title: 'talk-swal-title',
+      confirmButton: 'talk-swal-confirm'
+    }
+  });
+}
+
+function showAppConfirm({
+  title = 'Are you sure?',
+  text = '',
+  icon = 'question',
+  confirmButtonText = 'Continue',
+  cancelButtonText = 'Cancel'
+} = {}) {
+  if (typeof Swal === 'undefined') {
+    return Promise.resolve({ isConfirmed: confirm(text || title) });
+  }
+
+  return Swal.fire({
+    title,
+    text,
+    icon,
+    showCancelButton: true,
+    confirmButtonText,
+    cancelButtonText,
+    reverseButtons: true,
+    focusCancel: true,
+    buttonsStyling: false,
+    customClass: {
+      popup: 'talk-swal',
+      title: 'talk-swal-title',
+      confirmButton: 'talk-swal-confirm',
+      cancelButton: 'talk-swal-cancel'
+    }
+  });
 }
 
 function applyTalkMedia(talk, youtubeLink, ldsLink, iframe) {
@@ -112,6 +164,34 @@ function normalizeSearchText(text) {
   return (text || '').trim().toLowerCase();
 }
 
+function normalizeTypeValue(typeValue) {
+  const normalizedType = normalizeSearchText(typeValue);
+
+  if (normalizedType === 'general conference' || normalizedType === 'conference' || normalizedType === 'gc') {
+    return 'general conference';
+  }
+
+  if (normalizedType === 'devo' || normalizedType === 'devotional' || normalizedType === 'devotionals') {
+    return 'devo';
+  }
+
+  return normalizedType;
+}
+
+function getTypeLabel(typeValue) {
+  const normalizedType = normalizeTypeValue(typeValue);
+
+  if (normalizedType === 'general conference') {
+    return 'General Conference';
+  }
+
+  if (normalizedType === 'devo') {
+    return 'Devotionals';
+  }
+
+  return typeValue;
+}
+
 function getMonthLabel(monthValue) {
   const normalizedMonth = normalizeSearchText(monthValue);
   const monthNumber = Number(normalizedMonth);
@@ -163,14 +243,6 @@ function getMostRecentlyAddedTalk() {
   return talksWithDates[0].talk;
 }
 
-function isRecentSearch(text) {
-  const normalizedText = normalizeSearchText(text);
-  return normalizedText === 'recent'
-    || normalizedText === 'recently added'
-    || normalizedText === 'newest'
-    || normalizedText === 'latest';
-}
-
 function setSelectOptions(selectId, placeholder, values) {
   const select = document.getElementById(selectId);
   select.innerHTML = `<option value="">${placeholder}</option>`;
@@ -199,128 +271,308 @@ function sortYears(years) {
   return [...years].sort((a, b) => Number(b) - Number(a));
 }
 
-function populateTypeOptions() {
-  const types = getUniqueValues(talksArr, 'type').sort((a, b) => a.localeCompare(b));
-  setSelectOptions('typeSelect', 'Choose Type', types);
+function getTalksForSelectedType(type = selectedTalkType) {
+  if (!type) {
+    return talksArr;
+  }
+
+  return talksArr.filter(talk => normalizeTypeValue(talk.type) === normalizeTypeValue(type));
 }
 
-function populateAuthorOptions() {
-  const authors = getUniqueValues(talksArr, 'speaker').sort((a, b) => a.localeCompare(b));
+function updateAuthorFilterAvailability() {
+  const authorSearchBtn = document.getElementById('authorSearchBtn');
+  const authorSelect = document.getElementById('authorSelect');
+
+  if (!authorSearchBtn || !authorSelect) {
+    return;
+  }
+
+  authorSearchBtn.disabled = !authorSelect.value;
+}
+
+function resetAuthorFilter() {
+  const authorSelect = document.getElementById('authorSelect');
+  populateAuthorOptions();
+  authorSelect.value = '';
+  updateAuthorFilterAvailability();
+}
+
+function populateAuthorOptions(type = selectedTalkType) {
+  const authorSelect = document.getElementById('authorSelect');
+  const filteredTalks = getTalksForSelectedType(type);
+  const authors = getUniqueValues(filteredTalks, 'speaker').sort((a, b) => a.localeCompare(b));
+  const currentValue = authorSelect.value;
+
   setSelectOptions('authorSelect', 'Choose Author', authors);
+  authorSelect.disabled = authors.length === 0;
+
+  if (authors.includes(currentValue)) {
+    authorSelect.value = currentValue;
+  } else {
+    authorSelect.value = '';
+  }
+
+  updateAuthorFilterAvailability();
 }
 
-function populateMonthOptions(type) {
-  const filteredTalks = talksArr.filter(talk => normalizeSearchText(talk.type) === normalizeSearchText(type));
+function populateMonthOptions(type = selectedTalkType, year = '') {
+  const filteredTalks = getTalksForSelectedType(type).filter(talk => {
+    return !year || normalizeSearchText(talk.year) === normalizeSearchText(year);
+  });
   const months = sortMonths(getUniqueValues(filteredTalks, 'month')).map(getMonthLabel);
   const monthSelect = document.getElementById('monthSelect');
+  const currentValue = monthSelect.value;
   setSelectOptions('monthSelect', 'Choose Month', months);
   monthSelect.disabled = months.length === 0;
+
+  if (months.includes(currentValue)) {
+    monthSelect.value = currentValue;
+  } else {
+    monthSelect.value = '';
+  }
 }
 
-function populateYearOptions(type, month = '') {
-  const filteredTalks = talksArr.filter(talk => {
-    const sameType = normalizeSearchText(talk.type) === normalizeSearchText(type);
+function populateYearOptions(type = selectedTalkType, month = '') {
+  const yearSelect = document.getElementById('yearSelect');
+  const currentValue = yearSelect.value;
+  const filteredTalks = getTalksForSelectedType(type).filter(talk => {
     const sameMonth = !month || normalizeMonthValue(talk.month) === normalizeMonthValue(month);
-    return sameType && sameMonth;
+    return sameMonth;
   });
   const years = sortYears(getUniqueValues(filteredTalks, 'year'));
-  const yearSelect = document.getElementById('yearSelect');
   setSelectOptions('yearSelect', 'Choose Year', years);
   yearSelect.disabled = years.length === 0;
+
+  if (years.includes(currentValue)) {
+    yearSelect.value = currentValue;
+  } else {
+    yearSelect.value = '';
+  }
+}
+
+function syncDateFilterOptions(type = selectedTalkType) {
+  const yearSelect = document.getElementById('yearSelect');
+  populateMonthOptions(type, yearSelect.value);
+  populateYearOptions(type, document.getElementById('monthSelect').value);
 }
 
 function resetDateFilters() {
+  syncDateFilterOptions();
+}
+
+function updateDateFilterAvailability() {
+  const dateSearchBtn = document.getElementById('dateSearchBtn');
   const monthSelect = document.getElementById('monthSelect');
   const yearSelect = document.getElementById('yearSelect');
-  setSelectOptions('monthSelect', 'Choose Month', []);
-  setSelectOptions('yearSelect', 'Choose Year', []);
-  monthSelect.disabled = true;
-  yearSelect.disabled = true;
+
+  if (!dateSearchBtn || !monthSelect || !yearSelect) {
+    return;
+  }
+
+  dateSearchBtn.disabled = !selectedTalkType && !monthSelect.value && !yearSelect.value;
+}
+
+function updateTypeButtons() {
+  const typeButtons = document.querySelectorAll('.chip-button[data-type]');
+  typeButtons.forEach(button => {
+    const isActive = normalizeTypeValue(button.dataset.type) === selectedTalkType;
+    button.classList.toggle('is-active', isActive);
+    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
+}
+
+function updateTypeSelectionStatus() {
+  const status = document.getElementById('typeSelectionStatus');
+
+  if (!status) {
+    return;
+  }
+
+  if (!selectedTalkType) {
+    status.innerText = 'Collection is optional. Choose one to narrow the month, year, and author filters below.';
+    return;
+  }
+
+  status.innerText = `${getTypeLabel(selectedTalkType)} selected. The month, year, and author filters are now narrowed to this collection.`;
+}
+
+function loadMostRecentTalk() {
+  const recentTalk = getMostRecentlyAddedTalk();
+
+  if (!recentTalk) {
+    showAppAlert({
+      title: 'Nothing Recent Yet',
+      text: 'No recently added talk is available right now.',
+      icon: 'info'
+    });
+    return;
+  }
+
+  renderTalk(recentTalk);
+}
+
+function selectTalkType(typeValue) {
+  const normalizedType = normalizeTypeValue(typeValue);
+
+  if (selectedTalkType === normalizedType) {
+    selectedTalkType = '';
+    syncDateFilterOptions();
+    populateAuthorOptions();
+    updateDateFilterAvailability();
+    updateTypeButtons();
+    updateTypeSelectionStatus();
+    return;
+  }
+
+  selectedTalkType = normalizedType;
+  syncDateFilterOptions(selectedTalkType);
+  populateAuthorOptions(selectedTalkType);
+  updateDateFilterAvailability();
+  updateTypeButtons();
+  updateTypeSelectionStatus();
 }
 
 function initializeDateFilters() {
-  const typeSelect = document.getElementById('typeSelect');
   const monthSelect = document.getElementById('monthSelect');
   const yearSelect = document.getElementById('yearSelect');
+  const typeButtons = document.querySelectorAll('.chip-button[data-type]');
+  const recentButton = document.getElementById('recentTalkBtn');
 
-  populateTypeOptions();
   resetDateFilters();
+  updateDateFilterAvailability();
+  updateTypeButtons();
+  updateTypeSelectionStatus();
 
-  typeSelect.addEventListener('change', function () {
-    if (!this.value) {
-      resetDateFilters();
-      return;
-    }
-
-    populateMonthOptions(this.value);
-    monthSelect.value = '';
-    setSelectOptions('yearSelect', 'Choose Year', []);
-    yearSelect.value = '';
-    yearSelect.disabled = true;
+  typeButtons.forEach(button => {
+    button.addEventListener('click', function () {
+      selectTalkType(this.dataset.type);
+    });
   });
 
+  if (recentButton) {
+    recentButton.addEventListener('click', function () {
+      loadMostRecentTalk();
+    });
+  }
+
   monthSelect.addEventListener('change', function () {
-    const selectedType = typeSelect.value;
-    if (!selectedType) {
-      return;
-    }
+    syncDateFilterOptions(selectedTalkType);
+    updateDateFilterAvailability();
+  });
 
-    if (!this.value) {
-      setSelectOptions('yearSelect', 'Choose Year', []);
-      yearSelect.value = '';
-      yearSelect.disabled = true;
-      return;
-    }
-
-    populateYearOptions(selectedType, this.value);
+  yearSelect.addEventListener('change', function () {
+    syncDateFilterOptions(selectedTalkType);
+    updateDateFilterAvailability();
   });
 }
 
 function initializeAuthorFilter() {
-  populateAuthorOptions();
+  const authorSelect = document.getElementById('authorSelect');
+  resetAuthorFilter();
+
+  authorSelect.addEventListener('change', function () {
+    updateAuthorFilterAvailability();
+  });
+}
+
+function setTalkLoadingState(isLoading) {
+  const talkcard = document.getElementById('talkcard');
+
+  if (!talkcard) {
+    return;
+  }
+
+  talkcard.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+  talkcard.classList.toggle('is-loading', isLoading);
+}
+
+function scrollToLoadedTalk() {
+  const talkcard = document.getElementById('talkcard');
+
+  if (!talkcard || !window.matchMedia('(max-width: 760px)').matches) {
+    return;
+  }
+
+  const activeElement = document.activeElement;
+  if (activeElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(activeElement.tagName)) {
+    activeElement.blur();
+  }
+
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  window.setTimeout(() => {
+    const top = Math.max(talkcard.getBoundingClientRect().top + window.scrollY - 16, 0);
+    window.scrollTo({
+      top,
+      behavior: prefersReducedMotion ? 'auto' : 'smooth'
+    });
+  }, 140);
 }
 
 function renderTalk(talk) {
   const talkcard = document.getElementById('talkcard');
-  const loadingscreen = document.getElementById('loadingScreen');
   const title = document.getElementById('Title');
   const speaker = document.getElementById('Speaker');
   const youtubeLink = document.getElementById('YoutubeLink');
   const ldsLink = document.getElementById('Url');
   const iframe = document.getElementById('TalkIframe');
+  const currentToken = ++renderTalkToken;
 
-  loadingscreen.style.display = 'block';
-  talkcard.style.display = 'none';
+  talkcard.style.display = 'block';
+  setTalkLoadingState(true);
 
-  setTimeout(() => {
-    activeTalk = talk;
-    title.innerText = talk.title;
-    speaker.innerText = talk.speaker;
-    applyTalkMedia(talk, youtubeLink, ldsLink, iframe);
+  activeTalk = talk;
+  title.innerText = talk.title;
+  speaker.innerText = talk.speaker;
+  applyTalkMedia(talk, youtubeLink, ldsLink, iframe);
+  scrollToLoadedTalk();
 
-    talkcard.style.display = 'block';
-    loadingscreen.style.display = 'none';
-  }, 3000);
+  if (iframe.style.display === 'none' || iframe.src === 'about:blank') {
+    requestAnimationFrame(() => {
+      if (currentToken === renderTalkToken) {
+        setTalkLoadingState(false);
+      }
+    });
+    return;
+  }
+
+  const finishLoading = () => {
+    if (currentToken === renderTalkToken) {
+      setTalkLoadingState(false);
+    }
+  };
+
+  iframe.addEventListener('load', finishLoading, { once: true });
+  setTimeout(finishLoading, 900);
 }
 
 function searchByDate() {
-  const type = document.getElementById('typeSelect').value;
   const month = document.getElementById('monthSelect').value;
   const year = document.getElementById('yearSelect').value;
 
-  if (!type || !month || !year) {
-    alert('Choose a type, month, and year first.');
+  if (!selectedTalkType && !month && !year) {
+    showAppAlert({
+      title: 'Choose a Filter',
+      text: 'Choose a collection, month, or year first.',
+      icon: 'warning'
+    });
     return;
   }
 
   const matches = talksArr.filter(talk => {
-    return normalizeSearchText(talk.type) === normalizeSearchText(type)
-      && normalizeMonthValue(talk.month) === normalizeMonthValue(month)
-      && normalizeSearchText(talk.year) === normalizeSearchText(year);
+    const sameType = !selectedTalkType || normalizeTypeValue(talk.type) === selectedTalkType;
+    const sameMonth = !month || normalizeMonthValue(talk.month) === normalizeMonthValue(month);
+    const sameYear = !year || normalizeSearchText(talk.year) === normalizeSearchText(year);
+
+    return sameType && sameMonth && sameYear;
   });
 
   if (matches.length === 0) {
-    alert('No talks matched that type, month, and year.');
+    showAppAlert({
+      title: 'No Matches Found',
+      text: 'No talks matched those filters.',
+      icon: 'info'
+    });
     return;
   }
 
@@ -332,14 +584,27 @@ function searchByAuthor() {
   const author = document.getElementById('authorSelect').value;
 
   if (!author) {
-    alert('Choose an author first.');
+    showAppAlert({
+      title: 'Choose an Author',
+      text: 'Choose an author first.',
+      icon: 'warning'
+    });
     return;
   }
 
-  const matches = talksArr.filter(talk => normalizeSearchText(talk.speaker) === normalizeSearchText(author));
+  const matches = talksArr.filter(talk => {
+    const sameType = !selectedTalkType || normalizeTypeValue(talk.type) === selectedTalkType;
+    return sameType && normalizeSearchText(talk.speaker) === normalizeSearchText(author);
+  });
 
   if (matches.length === 0) {
-    alert('No talks matched that author.');
+    showAppAlert({
+      title: 'No Matches Found',
+      text: selectedTalkType
+        ? 'No talks matched that author in the selected collection.'
+        : 'No talks matched that author.',
+      icon: 'info'
+    });
     return;
   }
 
@@ -391,7 +656,11 @@ function loadRandomTalk() {
   }
 
   if (availableTalks.length === 0) {
-    alert('There are no talks available right now. Try clearing your listened list.');
+    showAppAlert({
+      title: 'No Talks Available',
+      text: 'There are no talks available right now. Try clearing your listened list.',
+      icon: 'warning'
+    });
     return;
   }
 
@@ -405,9 +674,6 @@ function searchTalk() {
   const text = document.getElementById('myInput').value;
   try {
     let talk = talkObject[normalizeSearchText(text)];
-    if (!talk && isRecentSearch(text)) {
-      talk = getMostRecentlyAddedTalk();
-    }
     if (talk != undefined) {
       renderTalk(talk);
     } else {
@@ -432,24 +698,32 @@ function showPlaySavedTalk() {
     // no saved talks yet.
     document.getElementById('savedTalks').style.display = 'none';
   } else {
-    document.getElementById('savedTalks').style.display = 'block';
+    document.getElementById('savedTalks').style.display = 'inline-flex';
     activeTalk = JSON.parse(savedTalk);
   }
 }
 
-function saveTalk() {
+async function saveTalk() {
   const savedTalk = localStorage.getItem('savedTalk');
   if (savedTalk != null) {
-    if (confirm('You already have a talk saved, would you like to save over it?')) {
+    const result = await showAppConfirm({
+      title: 'Replace Saved Talk?',
+      text: 'You already have a talk saved. Do you want to replace it with this one?',
+      icon: 'question',
+      confirmButtonText: 'Replace It',
+      cancelButtonText: 'Keep Current'
+    });
+
+    if (!result.isConfirmed) {
+      return //they didn't want to everride the saved talk.
+    }
+
     localStorage.setItem('savedTalk', JSON.stringify(activeTalk));
     document.getElementById('saveBtn').innerText = 'Saved!'
     setTimeout(()=>{
       document.getElementById('saveBtn').innerText = 'Save This Talk For Later';
       showPlaySavedTalk();
     },1500)
-    } else {
-      return //they didn't want to everride the saved talk.
-    }
   } else {
     localStorage.setItem('savedTalk', JSON.stringify(activeTalk));
     document.getElementById('saveBtn').innerText = 'Saved!'
@@ -507,7 +781,7 @@ function getWithExpiry(key) {
   return remainingListenedTo.map(x => x.val);
 }
 
-function alreadyListened(){
+async function alreadyListened(){
   let listenedToArr = getWithExpiry('listenedTo')
   if(listenedToArr){
     listenedToArr.push(activeTalk.title)
@@ -515,7 +789,11 @@ function alreadyListened(){
     listenedToArr = [activeTalk.title]
   }
   setWithExpiry('listenedTo', listenedToArr, 2592000000);
-  alert('This talk has been added to your already listened to stash. It will remain there for 30 days.')
+  await showAppAlert({
+    title: 'Marked as Listened',
+    text: 'This talk has been added to your already listened to stash. It will remain there for 30 days.',
+    icon: 'success'
+  });
   loadRandomTalk();
 }
 
@@ -666,11 +944,7 @@ function autocomplete(inp, arr) {
 }
 
 async function calculateBookOfMormonProgress(){
-
-  document.getElementById('loadingScreen2').classList.contains('hidden') ? document.getElementById('loadingScreen2').classList.remove('hidden') : '';
   document.getElementById('calculatedResponseDiv') && !document.getElementById('calculatedResponseDiv').classList.contains('hidden') ? document.getElementById('calculatedResponseDiv').classList.add('hidden') : '';
-
-  await setTimeout(()=>{console.log('waiting')},2000);
 
   const lastPage = 531;
   const pageOn = document.getElementById('pageOn').value;
@@ -689,7 +963,6 @@ async function calculateBookOfMormonProgress(){
   fillFinishByDate();
 
   document.getElementById('calculatedResponseDiv') && document.getElementById('calculatedResponseDiv').classList.contains('hidden') ? document.getElementById('calculatedResponseDiv').classList.remove('hidden') : '';
-  document.getElementById('loadingScreen2') && !document.getElementById('loadingScreen2').classList.contains('hidden') ? document.getElementById('loadingScreen2').classList.add('hidden') : '';
   
   return pagesPerDay
 
@@ -740,10 +1013,9 @@ function fillFinishByDate(){
     document.getElementById('finishByDate').innerText = finishDate;
 }
 
-const form = document.querySelector('form');
-const username = document.getElementById('name');
-const email = document.getElementById('email');
-const message = document.getElementById('message');
+const suggestionForm = document.getElementById('suggestionForm');
+const suggestionName = document.getElementById('name');
+const suggestionLink = document.getElementById('suggestion');
 
 
 showPlaySavedTalk();
@@ -756,19 +1028,15 @@ loadTalks().then(() => {
 });
 
 
-form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    if (!username.value || !email.value || !message.value) {
-        alert('Please fill in all fields');
-        return;
+if (suggestionForm && suggestionName && suggestionLink) {
+  suggestionForm.addEventListener('submit', async (e) => {
+    if (!suggestionName.value.trim() || !suggestionLink.value.trim()) {
+      e.preventDefault();
+      await showAppAlert({
+        title: 'Missing Information',
+        text: 'Please fill in your name and a talk link.',
+        icon: 'warning'
+      });
     }
-    if (!isValidEmail(email.value)) {
-        alert('Please enter a valid email');
-        return;
-    }
-    alert(`Name: ${username.value}\nEmail: ${email.value}\nMessage: ${message.value}`);
-});
-
-function isValidEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  });
 }

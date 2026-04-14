@@ -1,34 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Uplifting Talk Finder</title>
     <link rel="stylesheet" type="text/css" href="styles.css">
     <link rel="stylesheet" type="text/css" href="autocomplete.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap"
+        rel="stylesheet">
 </head>
+
 <body>
     <div id="wrapper">
-        
-        <header>
-            <h1><a href="index.html">LDS Talk Finder</a></h1>
+        <header class="site-header">
+            <div class="brand-lockup">
+                <p class="eyebrow">Uplifting Study</p>
+                <h1><a href="index.html">LDS Talk Finder</a></h1>
+                <p class="site-lead">A refreshed place to revisit General Conference messages, devotionals, and the
+                    talks that point you back to Jesus Christ.</p>
+            </div>
         </header>
 
         <main>
-            <section>
-                <div id="instructional">
-                    <h2>Find your favorite talks in a new and easy way</h2>
-                    <p>On this page you will find links to some of my favorite talks from The Church of Jesus Christ of Latter-Day Saints.</p>
-                    <p>I hope you find this tool useful when trying to hear the word of the Lord from His Prophets.</p>
-                </div>
-            </section>
+            <section class="hero-layout">
+                <div id="contents" class="control-deck">
+                    <div id="searchdiv" class="panel control-card">
+                        <div id="instructional" class="search-intro">
+                            <p class="eyebrow">Study Made Simpler</p>
+                            <h2>Find the right message for the moment you are in.</h2>
+                            <p>Use the title search when you know exactly what you want, or browse by speaker and conference
+                                date when you want something more intentional.</p>
+                        </div>
 
-            <section>
-                <div id="contents">
-                    <div id="searchdiv">
-                        <label for="myInput">Search a talk</label>
-                        <form autocomplete="off">
+                        <div class="control-header">
+                            <label for="myInput">Search by title</label>
+                            <p>Try a full talk name or a keyword.</p>
+                        </div>
+                        <form id="titleSearchForm" autocomplete="off">
                             <div class="autocomplete">
                                 <input id="myInput" type="text" name="listOfTalks" placeholder="Talk Name">
                             </div>
@@ -36,111 +47,155 @@
                         </form>
                     </div>
 
-                    <div id="filterSearch">
-                        <label>Find by type and date given</label>
-                        <div id="filterControls">
-                            <select id="typeSelect">
-                                <option value="">Choose Type</option>
-                            </select>
-                            <select id="monthSelect" disabled>
-                                <option value="">Choose Month</option>
-                            </select>
-                            <select id="yearSelect" disabled>
-                                <option value="">Choose Year</option>
-                            </select>
-                            <button class="btn" onclick="searchByDate(); return false">Find Talk</button>
+                    <div id="quickActions" class="panel control-card">
+                        <div class="control-header">
+                            <label>Quick Picks</label>
+                            <p>Jump into something uplifting right away, or return to the talk you saved for later.</p>
+                        </div>
+                        <div id="actions" class="action-row">
+                            <button class="btn btn-secondary" onclick="loadRandomTalk(); return false">Random Talk</button>
+                            <button class="btn btn-secondary" id="recentTalkBtn" type="button">Recently Added</button>
+                            <button class="btn btn-secondary" id="savedTalks" onclick="loadSavedTalk(); return false">Saved
+                                Talk</button>
                         </div>
                     </div>
 
-                    <div id="authorSearch">
-                        <label>Find by author</label>
-                        <div id="authorControls">
-                            <select id="authorSelect">
-                                <option value="">Choose Author</option>
-                            </select>
-                            <button class="btn" onclick="searchByAuthor(); return false">Find Author Talk</button>
+                    <div id="typeFilter" class="panel control-card">
+                        <div class="control-header">
+                            <label>Browse by collection</label>
+                            <p>Choose General Conference or Devotionals to narrow the filters below, or leave both off to search everything.</p>
                         </div>
+                        <div class="feature-chips">
+                            <button class="chip chip-button" type="button" data-type="general conference">General Conference</button>
+                            <button class="chip chip-button" type="button" data-type="devo">Devotionals</button>
+                        </div>
+                        <p id="typeSelectionStatus" class="selection-status">Collection is optional. Choose one to narrow the month, year, and author filters below.</p>
                     </div>
 
-                    <div id="actions">
-                        <button class="btn" onclick="loadRandomTalk(); return false">Random Talk</button>
-                        <button class="btn" id="savedTalks" onclick="loadSavedTalk(); return false">Saved Talk</button>
-                    </div>
+                    <div class="filter-grid">
+                        <div id="filterSearch" class="panel control-card">
+                            <div class="control-header">
+                                <label>Find by date given</label>
+                                <p>Choose a month, a year, or both. The collection filter above is optional.</p>
+                            </div>
+                            <div id="filterControls">
+                                <select id="monthSelect">
+                                    <option value="">Choose Month</option>
+                                </select>
+                                <select id="yearSelect">
+                                    <option value="">Choose Year</option>
+                                </select>
+                                <button class="btn" id="dateSearchBtn" onclick="searchByDate(); return false" disabled>Find Talk</button>
+                            </div>
+                        </div>
 
-                    <div id="loadingScreen">
-                        <lottie-player src="https://assets8.lottiefiles.com/packages/lf20_zjycbtqy.json" background="#F4F4F4" speed=".5" style="width: 100%;" loop autoplay></lottie-player>
+                        <div id="authorSearch" class="panel control-card">
+                            <div class="control-header">
+                                <label>Find by author</label>
+                                <p>Pick any speaker, or use the collection filter above to narrow the list first.</p>
+                            </div>
+                            <div id="authorControls">
+                                <select id="authorSelect">
+                                    <option value="">Choose Author</option>
+                                </select>
+                                <button class="btn" id="authorSearchBtn" onclick="searchByAuthor(); return false" disabled>Find Author Talk</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
 
             <section>
-                <div id="talkcard">
-                    <h3 id="Title"></h3>
-                    <label id="Speaker"></label>
+                <div id="talkcard" class="panel result-card">
+                    <div class="result-top">
+                        <div class="result-copy">
+                            <p class="eyebrow">Now Playing</p>
+                            <h3 id="Title"></h3>
+                            <label id="Speaker"></label>
+                        </div>
+                        <!-- <div class="result-badge">
+                            Save a talk for later, mark it as listened, or open the embedded reader without leaving the
+                            page.
+                        </div> -->
+                    </div>
+
                     <div id="card">
                         <div id="icons">
                             <h3>Listen On</h3>
                             <a class="psuedobutton" target="_blank" id="YoutubeLink" href="">
                                 <img alt="YouTube Thumbnail" src="Images/yt_logo_rgb_light.png">
+                                YouTube
                             </a>
                             <a class="psuedobutton" target="_blank" id="Url" href="">
-                                <img id="cws" alt="Church Website Thumbnail" src="Images/browser.png"> Gospel Library
+                                <img id="cws" alt="Church Website Thumbnail" src="Images/browser.png">
+                                Gospel Library
                             </a>
                             <button id="saveBtn" class="realbutton" onclick="saveTalk()">Save This For Later</button>
-                            <button id="alreadyListened" class="realbutton" onclick="alreadyListened()">Already Listened</button>
+                            <button id="alreadyListened" class="realbutton" onclick="alreadyListened()">Already
+                                Listened</button>
                         </div>
-                        <iframe id="TalkIframe" src=""></iframe>
+
+                        <div class="iframe-shell">
+                            <iframe id="TalkIframe" src=""></iframe>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            <section>
-                <div id="emailsection">
-                    <h3>Don't have a talk you're looking for? Send in your suggestions</h3>
-                    <form action="https://formspree.io/f/xrgvlnvw" method="POST">
-                        <label for="name">Your Name:</label>
-                        <input type="text" id="name" name="Persons_Name" placeholder="Your Name">
-                        <label for="link">Link to the talk:</label>
-                        <input type="text" id="suggestion" name="Suggested_Talk" placeholder="ex: www.https://www.churchofjesuschrist.org/...">
-                        <button id="send">Send</button>
-                    </form>
-                </div>
-            </section>
+            <section class="support-grid">
 
-            <section>
-                <div id="progress-section">
-                    <h3>Calculate Your Book Of Mormon Progress for the year</h3>
+                <div id="progress-section" class="panel support-card">
+                    <p class="eyebrow">Book Of Mormon Progress</p>
+                    <h3>See what pace gets you through the year.</h3>
+                    <p>Enter the page you are on and adjust the slider to watch your finish date move.</p>
+
                     <label for="pageOn">What page are you on?</label>
                     <input type="number" id="pageOn" name="Page_On" placeholder="Page Number">
-                    <input id="calcBtn" type="submit" name="calcBtb" value="Get Progress" onclick="calculateBookOfMormonProgress()">
-                    <div id="loadingScreen2" class="hidden">
-                        <lottie-player src="https://lottie.host/631a1049-2426-4d75-a20e-f823e52148d3/ZsFfICbZN3.json" background="#F4F4F4" speed=".5" style="width: 100%;" loop autoplay></lottie-player>
-                    </div>
+                    <button id="calcBtn" type="button" onclick="calculateBookOfMormonProgress()">Get Progress</button>
+
                     <div id="calculatedResponseDiv" class="CalculationResponse hidden">
                         <p id="pagesLeft"></p>
                         <p id="percentageComplete"></p>
-                        <span>You are on track to finish by </span><span id="finishByDate">the end of the year</span><span> if you read about: </span><span id="pagesPerDay"></span><span> pages per day.</span>
+                        <p>You are on track to finish by <span id="finishByDate">the end of the year</span> if you read
+                            about <span id="pagesPerDay"></span> pages per day.</p>
                         <div class="slider">
                             <label for="slider1">Move the slider to see how soon you can finish</label>
-                            <input id="slider1" type="range" min=".5" max="15" value="1" step="0.5" oninput="fillFinishByDate(); pagesPerDay.innerText = this.value">
-                        </div> 
+                            <input id="slider1" type="range" min=".5" max="15" value="1" step="0.5"
+                                oninput="fillFinishByDate(); pagesPerDay.innerText = this.value">
+                        </div>
                     </div>
+                </div>
+
+                <div id="emailsection" class="panel support-card">
+                    <p class="eyebrow">Suggestions</p>
+                    <h3>Missing a talk you love?</h3>
+                    <p>Send a link and help the library keep growing.</p>
+                    <form id="suggestionForm" action="https://formspree.io/f/xrgvlnvw" method="POST">
+                        <label for="name">Your Name</label>
+                        <input type="text" id="name" name="Persons_Name" placeholder="Your Name">
+
+                        <label for="suggestion">Link to the talk</label>
+                        <input type="text" id="suggestion" name="Suggested_Talk"
+                            placeholder="https://www.churchofjesuschrist.org/...">
+
+                        <button id="send" type="submit">Send Suggestion</button>
+                    </form>
                 </div>
             </section>
         </main>
-            
-            <section>
-                <div class="centered">
-                    <p>Disclaimer: This is not an official website of the Church of Jesus Christ of Latter-Day Saints. This website is not funded or endorsed by the Church of Jesus Christ of Latter-Day Saints.</p>
-                    <br>
-                </div>
-            </section>
-        </div>
+
+        <section>
+            <div class="centered site-footer">
+                <p>Disclaimer: This is not an official website of The Church of Jesus Christ of Latter-day Saints. This
+                    website is not funded or endorsed by the Church of Jesus Christ of Latter-day Saints.</p>
+            </div>
+        </section>
     </div>
 
-    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="script.js"></script>
     <!-- <script src="sendEmail.js"></script> -->
 </body>
+
 </html>
