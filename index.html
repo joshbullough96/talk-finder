@@ -129,21 +129,44 @@
                 <div id="progress-section" class="panel support-card">
                     <p class="eyebrow">Book Of Mormon Progress</p>
                     <h3>See what pace gets you through the year.</h3>
-                    <p>Enter the page you are on and adjust the slider to watch your finish date move.</p>
+                    <p>Track by page or by exact verse, then adjust the slider to watch your finish date move.</p>
 
-                    <label for="pageOn">What page are you on?</label>
-                    <input type="number" id="pageOn" name="Page_On" placeholder="Page Number">
+                    <div class="progress-mode-toggle" role="group" aria-label="Progress tracking mode">
+                        <button class="progress-mode-btn is-active" id="pageModeBtn" type="button" data-progress-mode="page">Page</button>
+                        <button class="progress-mode-btn" id="verseModeBtn" type="button" data-progress-mode="verse">Verse</button>
+                    </div>
+
+                    <div id="pageProgressControls" class="progress-controls">
+                        <label for="pageOn">What page are you on?</label>
+                        <input type="number" id="pageOn" name="Page_On" placeholder="Page Number" min="1" max="531">
+                    </div>
+
+                    <div id="verseProgressControls" class="progress-controls hidden">
+                        <label for="bomBookSelect">Where are you in the Book of Mormon?</label>
+                        <div class="verse-picker">
+                            <select id="bomBookSelect">
+                                <option value="">Choose Book</option>
+                            </select>
+                            <select id="bomChapterSelect" disabled>
+                                <option value="">Choose Chapter</option>
+                            </select>
+                            <select id="bomVerseSelect" disabled>
+                                <option value="">Choose Verse</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <button id="calcBtn" type="button" onclick="calculateBookOfMormonProgress()">Get Progress</button>
 
                     <div id="calculatedResponseDiv" class="CalculationResponse hidden">
-                        <p id="pagesLeft"></p>
+                        <p id="progressLeft"></p>
                         <p id="percentageComplete"></p>
                         <p>You are on track to finish by <span id="finishByDate">the end of the year</span> if you read
-                            about <span id="pagesPerDay"></span> pages per day.</p>
+                            about <span id="unitsPerDay"></span> <span id="unitLabel">pages</span> per day.</p>
                         <div class="slider">
                             <label for="slider1">Move the slider to see how soon you can finish</label>
-                            <input id="slider1" type="range" min=".5" max="15" value="1" step="0.5"
-                                oninput="fillFinishByDate(); pagesPerDay.innerText = this.value">
+                            <input id="slider1" type="range" min=".5" max="30" value="1" step="0.5"
+                                oninput="updateProgressRate(this.value)">
                         </div>
                     </div>
                 </div>

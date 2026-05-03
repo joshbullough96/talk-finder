@@ -281,7 +281,8 @@ main {
 #myInput,
 #browseControls select,
 #emailsection input,
-#progress-section input {
+#progress-section input,
+#progress-section select {
     width: 100%;
     min-height: 54px;
     padding: 14px 16px;
@@ -295,7 +296,8 @@ main {
 #myInput:focus,
 #browseControls select:focus,
 #emailsection input:focus,
-#progress-section input:focus {
+#progress-section input:focus,
+#progress-section select:focus {
     outline: none;
     border-color: rgba(20, 82, 109, 0.48);
     box-shadow: 0 0 0 4px rgba(20, 82, 109, 0.1);
@@ -548,6 +550,49 @@ iframe#TalkIframe {
     gap: 12px;
 }
 
+.progress-mode-toggle {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 6px;
+    border-radius: var(--radius-sm);
+    background: rgba(20, 82, 109, 0.08);
+    border: 1px solid rgba(23, 50, 74, 0.08);
+}
+
+.progress-mode-btn {
+    min-height: 44px;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--accent-deep);
+    cursor: pointer;
+    font-weight: 700;
+    transition: background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.progress-mode-btn.is-active {
+    background: var(--panel-strong);
+    color: var(--text);
+    box-shadow: var(--shadow-soft);
+}
+
+.progress-controls {
+    display: grid;
+    gap: 10px;
+}
+
+.verse-picker {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+}
+
+#progress-section select:disabled {
+    opacity: 0.58;
+    cursor: not-allowed;
+}
+
 #calculatedResponseDiv {
     display: grid;
     gap: 10px;
@@ -556,6 +601,13 @@ iframe#TalkIframe {
     border-radius: 20px;
     background: rgba(20, 82, 109, 0.08);
     border: 1px solid rgba(23, 50, 74, 0.08);
+}
+
+#finishByDate,
+#unitsPerDay,
+#unitLabel {
+    font-weight: 700;
+    color: var(--accent-deep);
 }
 
 .slider {
@@ -667,6 +719,7 @@ input[type=range] {
 
     #searchdiv form,
     #browseControls,
+    .verse-picker,
     .action-row {
         grid-template-columns: 1fr;
     }

@@ -5,6 +5,16 @@ var activeTalk = {};
 var savedItem;
 let selectedTalkType = '';
 let renderTalkToken = 0;
+let bookOfMormonStructure = [];
+let progressMode = 'page';
+let latestProgressSnapshot = {
+  current: 0,
+  total: 531,
+  unitSingular: 'page',
+  unitPlural: 'pages'
+};
+const BOOK_OF_MORMON_TOTAL_PAGES = 531;
+const BOOK_OF_MORMON_TOTAL_VERSES = 6604;
 const monthOrder = [
   'january',
   'february',
@@ -935,74 +945,309 @@ function autocomplete(inp, arr) {
   });
 }
 
+async function loadBookOfMormonStructure() {
+  try {
+    const res = await fetch('data/book-of-mormon-structure.json');
+
+    if (!res.ok) {
+      throw new Error(`Unable to load Book of Mormon structure: ${res.status}`);
+    }
+
+    bookOfMormonStructure = await res.json();
+    validateBookOfMormonStructure();
+    populateBookOptions();
+  } catch (error) {
+    console.error(error);
+    const verseModeBtn = document.getElementById('verseModeBtn');
+
+    if (verseModeBtn) {
+      verseModeBtn.disabled = true;
+      verseModeBtn.title = 'Verse tracking could not load.';
+    }
+  }
+}
+
+function validateBookOfMormonStructure() {
+  const totalVerses = bookOfMormonStructure
+    .flatMap(book => book.chapters)
+    .reduce((sum, chapter) => sum + getChapterVerseCount(chapter), 0);
+
+  if (totalVerses !== BOOK_OF_MORMON_TOTAL_VERSES) {
+    console.warn(`Book of Mormon verse total is ${totalVerses}, expected ${BOOK_OF_MORMON_TOTAL_VERSES}.`);
+  }
+}
+
+function getChapterNumber(chapter) {
+  return Number(Object.keys(chapter)[0]);
+}
+
+function getChapterVerseCount(chapter) {
+  return Number(Object.values(chapter)[0]);
+}
+
+function populateBookOptions() {
+  const bookSelect = document.getElementById('bomBookSelect');
+
+  if (!bookSelect) {
+    return;
+  }
+
+  bookSelect.innerHTML = '<option value="">Choose Book</option>';
+
+  bookOfMormonStructure.forEach(book => {
+    const option = document.createElement('option');
+    option.value = book.book;
+    option.textContent = book.book;
+    bookSelect.appendChild(option);
+  });
+}
+
+function populateChapterOptions() {
+  const bookSelect = document.getElementById('bomBookSelect');
+  const chapterSelect = document.getElementById('bomChapterSelect');
+  const verseSelect = document.getElementById('bomVerseSelect');
+  const selectedBook = bookOfMormonStructure.find(book => book.book === bookSelect.value);
+
+  chapterSelect.innerHTML = '<option value="">Choose Chapter</option>';
+  verseSelect.innerHTML = '<option value="">Choose Verse</option>';
+  verseSelect.disabled = true;
+
+  if (!selectedBook) {
+    chapterSelect.disabled = true;
+    return;
+  }
+
+  selectedBook.chapters.forEach(chapter => {
+    const chapterNumber = getChapterNumber(chapter);
+    const option = document.createElement('option');
+    option.value = chapterNumber;
+    option.textContent = `Chapter ${chapterNumber}`;
+    chapterSelect.appendChild(option);
+  });
+
+  chapterSelect.disabled = false;
+}
+
+function populateVerseOptions() {
+  const bookSelect = document.getElementById('bomBookSelect');
+  const chapterSelect = document.getElementById('bomChapterSelect');
+  const verseSelect = document.getElementById('bomVerseSelect');
+  const selectedBook = bookOfMormonStructure.find(book => book.book === bookSelect.value);
+  const selectedChapter = selectedBook?.chapters.find(chapter => getChapterNumber(chapter) === Number(chapterSelect.value));
+
+  verseSelect.innerHTML = '<option value="">Choose Verse</option>';
+
+  if (!selectedChapter) {
+    verseSelect.disabled = true;
+    return;
+  }
+
+  const verseCount = getChapterVerseCount(selectedChapter);
+
+  for (let verseNumber = 1; verseNumber <= verseCount; verseNumber++) {
+    const option = document.createElement('option');
+    option.value = verseNumber;
+    option.textContent = `Verse ${verseNumber}`;
+    verseSelect.appendChild(option);
+  }
+
+  verseSelect.disabled = false;
+}
+
+function getGlobalVerseNumber(bookName, chapterNumber, verseNumber) {
+  let verseTotal = 0;
+
+  for (const book of bookOfMormonStructure) {
+    if (book.book === bookName) {
+      for (const chapter of book.chapters) {
+        const currentChapterNumber = getChapterNumber(chapter);
+
+        if (currentChapterNumber === chapterNumber) {
+          return verseTotal + verseNumber;
+        }
+
+        verseTotal += getChapterVerseCount(chapter);
+      }
+    } else {
+      verseTotal += book.chapters.reduce((sum, chapter) => sum + getChapterVerseCount(chapter), 0);
+    }
+  }
+
+  return null;
+}
+
+function setProgressMode(mode) {
+  progressMode = mode;
+
+  document.querySelectorAll('.progress-mode-btn').forEach(button => {
+    const isActive = button.dataset.progressMode === mode;
+    button.classList.toggle('is-active', isActive);
+    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
+
+  document.getElementById('pageProgressControls')?.classList.toggle('hidden', mode !== 'page');
+  document.getElementById('verseProgressControls')?.classList.toggle('hidden', mode !== 'verse');
+  document.getElementById('calculatedResponseDiv')?.classList.add('hidden');
+}
+
+function initializeBookOfMormonProgress() {
+  document.querySelectorAll('.progress-mode-btn').forEach(button => {
+    button.addEventListener('click', function () {
+      if (!this.disabled) {
+        setProgressMode(this.dataset.progressMode);
+      }
+    });
+  });
+
+  document.getElementById('bomBookSelect')?.addEventListener('change', populateChapterOptions);
+  document.getElementById('bomChapterSelect')?.addEventListener('change', populateVerseOptions);
+  loadBookOfMormonStructure();
+}
+
+function getCurrentProgressSnapshot() {
+  if (progressMode === 'page') {
+    const pageOn = Number(document.getElementById('pageOn')?.value);
+
+    if (!Number.isFinite(pageOn) || pageOn < 1 || pageOn > BOOK_OF_MORMON_TOTAL_PAGES) {
+      showAppAlert({
+        title: 'Check The Page',
+        text: `Enter a page from 1 to ${BOOK_OF_MORMON_TOTAL_PAGES}.`,
+        icon: 'warning'
+      });
+      return null;
+    }
+
+    return {
+      current: pageOn,
+      total: BOOK_OF_MORMON_TOTAL_PAGES,
+      unitSingular: 'page',
+      unitPlural: 'pages'
+    };
+  }
+
+  const bookName = document.getElementById('bomBookSelect')?.value;
+  const chapterNumber = Number(document.getElementById('bomChapterSelect')?.value);
+  const verseNumber = Number(document.getElementById('bomVerseSelect')?.value);
+  const globalVerseNumber = getGlobalVerseNumber(bookName, chapterNumber, verseNumber);
+
+  if (!globalVerseNumber) {
+    showAppAlert({
+      title: 'Choose A Verse',
+      text: 'Choose a book, chapter, and verse first.',
+      icon: 'warning'
+    });
+    return null;
+  }
+
+  return {
+    current: globalVerseNumber,
+    total: BOOK_OF_MORMON_TOTAL_VERSES,
+    unitSingular: 'verse',
+    unitPlural: 'verses'
+  };
+}
+
 async function calculateBookOfMormonProgress(){
-  document.getElementById('calculatedResponseDiv') && !document.getElementById('calculatedResponseDiv').classList.contains('hidden') ? document.getElementById('calculatedResponseDiv').classList.add('hidden') : '';
+  const calculatedResponseDiv = document.getElementById('calculatedResponseDiv');
+  calculatedResponseDiv?.classList.add('hidden');
 
-  const lastPage = 531;
-  const pageOn = document.getElementById('pageOn').value;
-  const today = new Date();
-  const dayOfTheYear = dayOfYear(today)
-  const daysLeftInAYear = 365 - dayOfTheYear;
-  const pagesToGo = lastPage - Number(pageOn);
-  const percentComplete = (Number(pageOn)/lastPage) * 100;
-  const pagesPerDay = roundHalf(pagesToGo/daysLeftInAYear) //(pagesToGo/daysLeftInAYear).toFixed(1);
-  
-  document.getElementById('pagesLeft').innerText = 'Pages Left: ' + pagesToGo;
+  const progressSnapshot = getCurrentProgressSnapshot();
+
+  if (!progressSnapshot) {
+    return null;
+  }
+
+  latestProgressSnapshot = progressSnapshot;
+
+  const unitsToGo = Math.max(progressSnapshot.total - progressSnapshot.current, 0);
+  const percentComplete = (progressSnapshot.current / progressSnapshot.total) * 100;
+  const unitsPerDay = getRecommendedUnitsPerDay(unitsToGo, progressSnapshot.unitSingular);
+  const slider = document.getElementById('slider1');
+
+  configureProgressSlider(slider, unitsPerDay, progressSnapshot.unitSingular);
+
+  document.getElementById('progressLeft').innerText = `${capitalize(progressSnapshot.unitPlural)} Left: ${unitsToGo}`;
   document.getElementById('percentageComplete').innerText = 'Percent Complete: ' +  percentComplete.toFixed(2) + '%';
-  document.getElementById('pagesPerDay').innerText = pagesPerDay;
-  document.getElementById('slider1').value = pagesPerDay;
-  
+  document.getElementById('unitsPerDay').innerText = unitsPerDay;
+  document.getElementById('unitLabel').innerText = progressSnapshot.unitPlural;
+
   fillFinishByDate();
-
-  document.getElementById('calculatedResponseDiv') && document.getElementById('calculatedResponseDiv').classList.contains('hidden') ? document.getElementById('calculatedResponseDiv').classList.remove('hidden') : '';
+  calculatedResponseDiv?.classList.remove('hidden');
   
-  return pagesPerDay
+  return unitsPerDay
 
+}
+
+function configureProgressSlider(slider, unitsPerDay, unitSingular) {
+  if (!slider) {
+    return;
+  }
+
+  if (unitSingular === 'verse') {
+    slider.min = 1;
+    slider.max = Math.max(200, Math.ceil(unitsPerDay / 10) * 10);
+    slider.step = 1;
+  } else {
+    slider.min = 0.5;
+    slider.max = Math.max(30, Math.ceil(unitsPerDay));
+    slider.step = 0.5;
+  }
+
+  slider.value = unitsPerDay;
+}
+
+function getRecommendedUnitsPerDay(unitsToGo, unitSingular) {
+  if (unitsToGo <= 0) {
+    return unitSingular === 'verse' ? 1 : 0.5;
+  }
+
+  const daysLeft = Math.max(daysUntilEndOfYear(new Date()), 1);
+  const rawUnitsPerDay = unitsToGo / daysLeft;
+
+  return unitSingular === 'verse' ? Math.max(Math.ceil(rawUnitsPerDay), 1) : roundHalf(rawUnitsPerDay);
 }
 
 function roundHalf(num) {
     return Math.ceil(num*2)/2;
 }
 
-function dayOfYear(date) {
-  // Create a new date object for the first day of the year
-  var firstDay = new Date(date.getFullYear(), 0, 1);
-  // Calculate the difference in milliseconds between the given date and the first day
-  var diff = date - firstDay;
-  // Convert the difference to days and round down
-  var oneDay = 1000 * 60 * 60 * 24;
-  var day = Math.floor(diff / oneDay);
-  // Return the day in a year, adding 1 since the first day is 1 and not 0
-  return day + 1;
+function daysUntilEndOfYear(date) {
+  const endOfYear = new Date(date.getFullYear(), 11, 31);
+  const oneDay = 1000 * 60 * 60 * 24;
+
+  return Math.ceil((endOfYear - date) / oneDay);
 }
 
-function finishByDate(pageOn, pagesPerDay) {
-  // Create a new date object for the current date
-  var today = new Date();
-  // Get the days left in a year
-  var daysLeftInAYear = 365 - dayOfYear(today);
-  // Get the pages left to read
-  var pagesLeft = 531 - Number(pageOn);
-  // Calculate how many days it will take to finish reading
-  var daysToFinish = Math.ceil(pagesLeft / pagesPerDay);
-  // Set the date to the future date by adding the days to finish
+function finishByDate(unitsPerDay) {
+  const today = new Date();
+  const unitsLeft = Math.max(latestProgressSnapshot.total - latestProgressSnapshot.current, 0);
+  const daysToFinish = Math.ceil(unitsLeft / Number(unitsPerDay));
+
   today.setDate(today.getDate() + daysToFinish);
-  // Format the date as yyyy-mm-dd
+
   var year = today.getFullYear();
-  var month = today.getMonth() + 1; // Months are zero-based
+  var month = today.getMonth() + 1;
   var day = today.getDate();
-  // Add leading zeros if needed
+
   if (month < 10) month = "0" + month;
   if (day < 10) day = "0" + day;
-  // Return the formatted date
+
   return month + "/" + day + "/" + year;
 }
 
 function fillFinishByDate(){
-    const pageOn = document.getElementById('pageOn').value;
-    const pagesPerDay = document.getElementById('slider1').value;
-    const finishDate = finishByDate(pageOn, pagesPerDay);
+    const unitsPerDay = document.getElementById('slider1').value;
+    const finishDate = finishByDate(unitsPerDay);
     document.getElementById('finishByDate').innerText = finishDate;
+}
+
+function updateProgressRate(unitsPerDay) {
+  document.getElementById('unitsPerDay').innerText = unitsPerDay;
+  fillFinishByDate();
+}
+
+function capitalize(text) {
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 const suggestionForm = document.getElementById('suggestionForm');
@@ -1011,6 +1256,7 @@ const suggestionLink = document.getElementById('suggestion');
 
 
 showPlaySavedTalk();
+initializeBookOfMormonProgress();
 
 loadTalks().then(() => {
   /*initiate the autocomplete function on the "myInput" element, and pass along the countries array as possible autocomplete values:*/
