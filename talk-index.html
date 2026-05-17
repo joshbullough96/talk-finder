@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Talk Index | Uplifting Talk Finder</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div id="wrapper">
+        <header class="site-header">
+            <div class="brand-lockup">
+                <p class="eyebrow">Talk Library</p>
+                <h1><a href="index.html">LDS Talk Finder</a></h1>
+                <p class="site-lead">Browse every talk in the collection alphabetically, then open the one you want to study.</p>
+                <nav class="site-nav" aria-label="Primary navigation">
+                    <a href="index.html">Finder</a>
+                    <a href="talk-index.html" aria-current="page">Talk Index</a>
+                </nav>
+            </div>
+        </header>
+
+        <main>
+            <section class="panel index-hero">
+                <div>
+                    <p class="eyebrow">Glossary View</p>
+                    <h2>Every talk in one place.</h2>
+                    <p id="indexSummary">Loading the talk library...</p>
+                </div>
+                <div class="index-controls" aria-label="Talk index filters">
+                    <input id="indexSearchInput" type="search" placeholder="Search title, speaker, or tag">
+                    <select id="indexTypeSelect">
+                        <option value="">All Collections</option>
+                    </select>
+                    <select id="indexTagSelect">
+                        <option value="">All Tags</option>
+                    </select>
+                </div>
+            </section>
+
+            <section class="panel index-panel">
+                <div id="alphabetNav" class="alphabet-nav" aria-label="Alphabet shortcuts"></div>
+                <div id="indexStatus" class="selection-status">Loading talks...</div>
+                <div id="talkIndexGroups" class="talk-index-groups"></div>
+            </section>
+        </main>
+
+        <section>
+            <div class="centered site-footer">
+                <p>Disclaimer: This is not an official website of The Church of Jesus Christ of Latter-day Saints. This
+                    website is not funded or endorsed by the Church of Jesus Christ of Latter-day Saints.</p>
+            </div>
+        </section>
+    </div>
+
+    <script src="talk-index.js"></script>
+</body>
+
+</html>

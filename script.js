@@ -174,6 +174,10 @@ function normalizeSearchText(text) {
   return (text || '').trim().toLowerCase();
 }
 
+function normalizeTagValue(tagValue) {
+  return normalizeSearchText(tagValue);
+}
+
 function normalizeTypeValue(typeValue) {
   const normalizedType = normalizeSearchText(typeValue);
 
@@ -220,6 +224,49 @@ function getMonthLabel(monthValue) {
 
 function normalizeMonthValue(monthValue) {
   return normalizeSearchText(getMonthLabel(monthValue));
+}
+
+function getCleanTags(tags) {
+  if (typeof tags === 'string') {
+    tags = tags.split('|');
+  }
+
+  if (!Array.isArray(tags)) {
+    return [];
+  }
+
+  const tagsByKey = new Map();
+  tags.forEach(tag => {
+    const cleanTag = (tag || '').trim();
+    const tagKey = normalizeTagValue(cleanTag);
+
+    if (cleanTag && !tagsByKey.has(tagKey)) {
+      tagsByKey.set(tagKey, cleanTag);
+    }
+  });
+
+  return [...tagsByKey.values()];
+}
+
+function talkHasTag(talk, tag) {
+  const normalizedTag = normalizeTagValue(tag);
+  return (talk.tags || []).some(talkTag => normalizeTagValue(talkTag) === normalizedTag);
+}
+
+function getUniqueTags(items) {
+  const tagsByKey = new Map();
+
+  items.forEach(item => {
+    (item.tags || []).forEach(tag => {
+      const tagKey = normalizeTagValue(tag);
+
+      if (tagKey && !tagsByKey.has(tagKey)) {
+        tagsByKey.set(tagKey, tag);
+      }
+    });
+  });
+
+  return [...tagsByKey.values()].sort((a, b) => a.localeCompare(b));
 }
 
 function parseDateAdded(dateText) {
@@ -315,7 +362,8 @@ function getCurrentBrowseFilters() {
     type: selectedTalkType,
     month: document.getElementById('monthSelect')?.value || '',
     year: document.getElementById('yearSelect')?.value || '',
-    author: document.getElementById('authorSelect')?.value || ''
+    author: document.getElementById('authorSelect')?.value || '',
+    tag: document.getElementById('tagSelect')?.value || ''
   };
 }
 
@@ -323,15 +371,17 @@ function getTalksMatchingFilters({
   type = selectedTalkType,
   month = '',
   year = '',
-  author = ''
+  author = '',
+  tag = ''
 } = {}) {
   return talksArr.filter(talk => {
     const sameType = !type || normalizeTypeValue(talk.type) === normalizeTypeValue(type);
     const sameMonth = !month || normalizeMonthValue(talk.month) === normalizeMonthValue(month);
     const sameYear = !year || normalizeSearchText(talk.year) === normalizeSearchText(year);
     const sameAuthor = !author || normalizeSearchText(talk.speaker) === normalizeSearchText(author);
+    const sameTag = !tag || talkHasTag(talk, tag);
 
-    return sameType && sameMonth && sameYear && sameAuthor;
+    return sameType && sameMonth && sameYear && sameAuthor && sameTag;
   });
 }
 
@@ -345,6 +395,10 @@ function getYearOptions(filters = getCurrentBrowseFilters()) {
 
 function getAuthorOptions(filters = getCurrentBrowseFilters()) {
   return getUniqueValues(getTalksMatchingFilters({ ...filters, author: '' }), 'speaker').sort((a, b) => a.localeCompare(b));
+}
+
+function getTagOptions(filters = getCurrentBrowseFilters()) {
+  return getUniqueTags(getTalksMatchingFilters({ ...filters, tag: '' }));
 }
 
 function applyBrowseSelectOptions(selectId, placeholder, values, selectedValue) {
@@ -361,13 +415,13 @@ function applyBrowseSelectOptions(selectId, placeholder, values, selectedValue) 
 
 function updateBrowseFilterAvailability() {
   const filterSearchBtn = document.getElementById('filterSearchBtn');
-  const { type, month, year, author } = getCurrentBrowseFilters();
+  const { type, month, year, author, tag } = getCurrentBrowseFilters();
 
   if (!filterSearchBtn) {
     return;
   }
 
-  filterSearchBtn.disabled = !type && !month && !year && !author;
+  filterSearchBtn.disabled = !type && !month && !year && !author && !tag;
 }
 
 function syncBrowseFilterOptions() {
@@ -393,12 +447,18 @@ function syncBrowseFilterOptions() {
       filters.year = '';
     }
 
+    const tagOptions = getTagOptions(filters);
+    if (filters.tag && !tagOptions.includes(filters.tag)) {
+      filters.tag = '';
+    }
+
     nextSnapshot = JSON.stringify(filters);
   }
 
   applyBrowseSelectOptions('monthSelect', 'Choose Month', getMonthOptions(filters), filters.month);
   applyBrowseSelectOptions('yearSelect', 'Choose Year', getYearOptions(filters), filters.year);
   applyBrowseSelectOptions('authorSelect', 'Choose Author', getAuthorOptions(filters), filters.author);
+  applyBrowseSelectOptions('tagSelect', 'Choose Tag', getTagOptions(filters), filters.tag);
   updateBrowseFilterAvailability();
 }
 
@@ -477,6 +537,7 @@ function initializeBrowseFilters() {
   const monthSelect = document.getElementById('monthSelect');
   const yearSelect = document.getElementById('yearSelect');
   const authorSelect = document.getElementById('authorSelect');
+  const tagSelect = document.getElementById('tagSelect');
   const typeButtons = document.querySelectorAll('.chip-button[data-type]');
   const recentButton = document.getElementById('recentTalkBtn');
   const talkOfDayButton = document.getElementById('talkOfDayBtn');
@@ -512,6 +573,10 @@ function initializeBrowseFilters() {
   });
 
   authorSelect.addEventListener('change', function () {
+    syncBrowseFilterOptions();
+  });
+
+  tagSelect.addEventListener('change', function () {
     syncBrowseFilterOptions();
   });
 }
@@ -550,7 +615,105 @@ function scrollToLoadedTalk() {
   }, 140);
 }
 
+function getHydratedTalk(talk) {
+  const currentTalk = talkObject[normalizeSearchText(talk?.title)];
+
+  if (currentTalk) {
+    return currentTalk;
+  }
+
+  return {
+    ...talk,
+    tags: getCleanTags(talk?.tags)
+  };
+}
+
+function renderTalkTags(talk) {
+  const tagList = document.getElementById('talkTagList');
+  const tags = getCleanTags(talk.tags);
+
+  if (!tagList) {
+    return;
+  }
+
+  tagList.innerHTML = '';
+  tagList.hidden = tags.length === 0;
+
+  tags.forEach(tag => {
+    const tagEl = document.createElement('span');
+    tagEl.className = 'chip talk-tag';
+    tagEl.textContent = tag;
+    tagList.appendChild(tagEl);
+  });
+}
+
+function getSharedTags(firstTalk, secondTalk) {
+  return getCleanTags(firstTalk.tags).filter(tag => talkHasTag(secondTalk, tag));
+}
+
+function getRelatedTalks(talk) {
+  const tags = getCleanTags(talk.tags);
+
+  if (tags.length === 0) {
+    return [];
+  }
+
+  return talksArr
+    .filter(candidate => normalizeSearchText(candidate.title) !== normalizeSearchText(talk.title))
+    .map(candidate => ({
+      talk: candidate,
+      sharedTags: getSharedTags(talk, candidate)
+    }))
+    .filter(item => item.sharedTags.length > 0)
+    .sort((a, b) => {
+      if (b.sharedTags.length !== a.sharedTags.length) {
+        return b.sharedTags.length - a.sharedTags.length;
+      }
+
+      return a.talk.title.localeCompare(b.talk.title);
+    });
+}
+
+function renderRelatedTalks(talk) {
+  const relatedSection = document.getElementById('relatedTalks');
+  const relatedList = document.getElementById('relatedTalkList');
+
+  if (!relatedSection || !relatedList) {
+    return;
+  }
+
+  const relatedTalks = getRelatedTalks(talk);
+  relatedList.innerHTML = '';
+  relatedSection.hidden = relatedTalks.length === 0;
+
+  relatedTalks.forEach(({ talk: relatedTalk, sharedTags }) => {
+    const relatedButton = document.createElement('button');
+    relatedButton.className = 'related-talk-card';
+    relatedButton.type = 'button';
+
+    const title = document.createElement('span');
+    title.className = 'related-talk-title';
+    title.textContent = relatedTalk.title;
+
+    const speaker = document.createElement('span');
+    speaker.className = 'related-talk-speaker';
+    speaker.textContent = relatedTalk.speaker;
+
+    const tags = document.createElement('span');
+    tags.className = 'related-talk-tags';
+    tags.textContent = sharedTags.join(', ');
+
+    relatedButton.append(title, speaker, tags);
+    relatedButton.addEventListener('click', function () {
+      renderTalk(relatedTalk);
+    });
+
+    relatedList.appendChild(relatedButton);
+  });
+}
+
 function renderTalk(talk) {
+  const hydratedTalk = getHydratedTalk(talk);
   const talkcard = document.getElementById('talkcard');
   const title = document.getElementById('Title');
   const speaker = document.getElementById('Speaker');
@@ -562,10 +725,12 @@ function renderTalk(talk) {
   talkcard.style.display = 'block';
   setTalkLoadingState(true);
 
-  activeTalk = talk;
-  title.innerText = talk.title;
-  speaker.innerText = talk.speaker;
-  applyTalkMedia(talk, youtubeLink, ldsLink, iframe);
+  activeTalk = hydratedTalk;
+  title.innerText = hydratedTalk.title;
+  speaker.innerText = hydratedTalk.speaker;
+  renderTalkTags(hydratedTalk);
+  renderRelatedTalks(hydratedTalk);
+  applyTalkMedia(hydratedTalk, youtubeLink, ldsLink, iframe);
   scrollToLoadedTalk();
 
   if (iframe.style.display === 'none' || iframe.src === 'about:blank') {
@@ -590,10 +755,10 @@ function renderTalk(talk) {
 function searchByFilters() {
   const filters = getCurrentBrowseFilters();
 
-  if (!filters.type && !filters.month && !filters.year && !filters.author) {
+  if (!filters.type && !filters.month && !filters.year && !filters.author && !filters.tag) {
     showAppAlert({
       title: 'Choose a Filter',
-      text: 'Choose a collection, month, year, or author first.',
+      text: 'Choose a collection, month, year, author, or tag first.',
       icon: 'warning'
     });
     return;
@@ -629,7 +794,7 @@ async function loadTalks() {
 
   rows.forEach(row => {
     let obj = {};
-    const [title, speaker, url, youtube, byuspeech, dateAdded, month, year, type] = row;
+    const [title, speaker, url, youtube, byuspeech, dateAdded, month, year, type, tags] = row;
     lines.push(row);
     obj['title'] = title;
     obj['speaker'] = speaker;
@@ -640,6 +805,7 @@ async function loadTalks() {
     obj['month'] = month;
     obj['year'] = year;
     obj['type'] = type;
+    obj['tags'] = getCleanTags(tags);
     talkTitles.push(title);
     talksArr.push(obj)
     talkObject[normalizeSearchText(obj['title'])] = obj;

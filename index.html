@@ -21,6 +21,10 @@
                 <h1><a href="index.html">LDS Talk Finder</a></h1>
                 <p class="site-lead">A refreshed place to revisit General Conference messages, devotionals, and the
                     talks that point you back to Jesus Christ.</p>
+                <nav class="site-nav" aria-label="Primary navigation">
+                    <a href="index.html" aria-current="page">Finder</a>
+                    <a href="talk-index.html">Talk Index</a>
+                </nav>
             </div>
         </header>
 
@@ -81,6 +85,9 @@
                             <select id="authorSelect">
                                 <option value="">Choose Author</option>
                             </select>
+                            <select id="tagSelect">
+                                <option value="">Choose Tag</option>
+                            </select>
                             <button class="btn" id="filterSearchBtn" onclick="searchByFilters(); return false" disabled>Find Talk</button>
                         </div>
                     </div>
@@ -94,6 +101,7 @@
                             <p class="eyebrow">Now Playing</p>
                             <h3 id="Title"></h3>
                             <label id="Speaker"></label>
+                            <div id="talkTagList" class="talk-tags" aria-label="Talk tags"></div>
                         </div>
                         <!-- <div class="result-badge">
                             Save a talk for later, mark it as listened, or open the embedded reader without leaving the
@@ -120,6 +128,10 @@
                         <div class="iframe-shell">
                             <iframe id="TalkIframe" src=""></iframe>
                         </div>
+                    </div>
+                    <div id="relatedTalks" class="related-talks" hidden>
+                        <h4>Related Talks</h4>
+                        <div id="relatedTalkList" class="related-talk-list"></div>
                     </div>
                 </div>
             </section>
